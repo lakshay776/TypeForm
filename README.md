@@ -624,33 +624,56 @@ The database is ~130 KB, so the smallest volume is ample. `render.yaml` is kept 
 documented alternative, pinned to `plan: starter` because a `free` plan with a disk
 is rejected.
 
+**No Docker.** Both hosts install straight from `requirements.txt` using their native
+Python runtime, which is one less moving part than maintaining an image for a plain
+ASGI app. `backend/.python-version` pins 3.12 so the deployed interpreter matches the
+one the tests run on — Railpack otherwise defaults to 3.13.
+
+### This is a monorepo, so tell the host where the app is
+
+Both platforms look at the **repository root** by default. This repo has `backend/`
+and `frontend/` there and no app at the top level, so auto-detection finds nothing
+and the build fails before it starts. Each service needs its root directory set:
+
+| Service | Root directory | Where |
+|---|---|---|
+| Backend | `backend` | Railway: service → **Settings** → *Root Directory* |
+| Frontend | `frontend` | Vercel: project → **Settings → General** → *Root Directory* |
+
+One catch worth knowing: **`railway.json` does not follow the root directory.**
+Railway reads it from the repo root regardless, which is exactly where it lives here —
+so the start command and health check apply without any extra configuration.
+
 ### Order matters
 
 `NEXT_PUBLIC_API_URL` is **inlined into the client bundle at build time**. Deploy the
 backend first, or the frontend will load but every submission will POST to the
 visitor's own `localhost:8000` and fail silently.
 
-**1. Backend → Railway.** New project from this repo, set the service's *Root
-Directory* to `backend` (so `backend/railway.json` and the Dockerfile are picked up),
-then attach a volume and set:
+**1. Backend → Railway.** New project from this repo, set *Root Directory* to
+`backend`, attach a volume, then set:
 
 | Variable | Value |
 |---|---|
-| `DATABASE_URL` | `sqlite:////data/typeform.db` — four slashes means an absolute path |
 | volume mount path | `/data` |
+| `DATABASE_URL` | `sqlite:////data/typeform.db` — four slashes means an absolute path |
 | `CORS_ORIGINS` | your Vercel origin, e.g. `https://your-app.vercel.app` |
 | `PUBLIC_FORM_BASE_URL` | that origin plus `/f` |
 
-`PORT` is provided by Railway and read by the container's start command. On first
-boot it migrates, seeds, and serves; check `/health` and `/docs`.
+`PORT` is supplied by Railway and read by the start command in `railway.json`, which
+migrates, seeds if empty, then serves. Railpack's default FastAPI command is
+`uvicorn main:app` — wrong for this layout and it skips migrations — which is why the
+start command is specified explicitly.
 
-**2. Frontend → Vercel.** Import the repo with *Root Directory* `frontend`, and set
-`NEXT_PUBLIC_API_URL` to the Railway URL before the first build.
+Verify with `/health` and `/docs` before moving on.
 
-**3. Close the loop.** Vercel assigns the real domain on that first deploy, so go
-back and set `CORS_ORIGINS` and `PUBLIC_FORM_BASE_URL` to it. `PUBLIC_FORM_BASE_URL`
-is what builds every `public_url`, so a stale value means the Share tab hands out
-links pointing at localhost.
+**2. Frontend → Vercel.** Import the repo, set *Root Directory* to `frontend`, and
+set `NEXT_PUBLIC_API_URL` to the Railway URL **before** the first build.
+
+**3. Close the loop.** Vercel assigns the real domain on that first deploy, so go back
+and set `CORS_ORIGINS` and `PUBLIC_FORM_BASE_URL` to it. `PUBLIC_FORM_BASE_URL` is
+what builds every `public_url`, so a stale value means the Share tab hands out links
+pointing at localhost.
 
 Then fill in a form end-to-end on the deployed URL — that exercises CORS, the volume
 and the shareable link in one pass.

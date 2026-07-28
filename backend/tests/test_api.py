@@ -219,37 +219,41 @@ def test_publish_exposes_public_url_and_unpublish_hides_it(client):
     assert client.get(f"{API}/public/forms/{published['slug']}").status_code == 404
 
 
-def test_publishing_is_blocked_until_the_form_is_complete(client):
+def test_an_empty_form_cannot_be_published(client):
     form = _create_form(client, "Half-built")
 
-    # No questions at all.
     empty = client.post(f"{API}/forms/{form['id']}/publish")
     assert empty.status_code == 422
     assert empty.json()["problems"] == ["Add at least one question."]
-
-    # A choice question created by the builder starts with blank options, which
-    # must save happily but must not be publishable.
-    question = client.post(
-        f"{API}/forms/{form['id']}/questions",
-        json={"type": "multiple_choice", "title": "", "options": [{"label": ""}, {"label": ""}]},
-    )
-    assert question.status_code == 201, question.text
-
-    blocked = client.post(f"{API}/forms/{form['id']}/publish")
-    assert blocked.status_code == 422
-    problems = blocked.json()["problems"]
-    assert "Question 1 needs a title." in problems
-    assert "Question 1 has an option with no label." in problems
     assert client.get(f"{API}/forms/{form['id']}").json()["status"] == "draft"
 
-    # Fill it in and publishing succeeds.
-    client.put(
-        f"{API}/forms/{form['id']}/questions/{question.json()['id']}",
-        json={"title": "Pick one", "options": [{"label": "Yes"}, {"label": "No"}]},
-    )
+    _add_question(client, form["id"], type="short_text", title="Anything")
     published = client.post(f"{API}/forms/{form['id']}/publish")
     assert published.status_code == 200
     assert published.json()["public_url"]
+
+
+def test_an_incomplete_form_is_still_publishable(client):
+    """A missing title or a blank option label is incomplete, not broken.
+
+    The UI shows a placeholder for either, so refusing to publish would stop a
+    creator sharing a draft they are still wording.
+    """
+    form = _create_form(client, "Rough draft")
+    created = client.post(
+        f"{API}/forms/{form['id']}/questions",
+        json={"type": "multiple_choice", "title": "", "options": [{"label": ""}, {"label": ""}]},
+    )
+    assert created.status_code == 201, created.text
+
+    published = client.post(f"{API}/forms/{form['id']}/publish")
+    assert published.status_code == 200, published.text
+    assert published.json()["public_url"]
+
+    # And it is genuinely reachable, untitled and all.
+    public = client.get(f"{API}/public/forms/{published.json()['slug']}")
+    assert public.status_code == 200
+    assert public.json()["questions"][0]["title"] == ""
 
 
 def test_blank_option_labels_are_savable_but_not_publishable(client):

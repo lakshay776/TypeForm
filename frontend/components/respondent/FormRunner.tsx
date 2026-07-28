@@ -12,9 +12,33 @@ import {
 import type { AnswerValue } from "@/components/form/AnswerField";
 import { ApiError, answerIssues, api } from "@/lib/api";
 import { isEmptyAnswer, validateAnswer } from "@/lib/answerValidation";
-import type { AnswerSubmission, PublicForm, ResponseCreated } from "@/lib/types";
+import type { AnswerSubmission, PublicForm, Question, ResponseCreated } from "@/lib/types";
 
 type Step = { kind: "welcome" } | { kind: "question"; index: number };
+
+/**
+ * How long a chosen answer stays on screen before the flow moves on.
+ *
+ * Short enough to feel like a response to the click, long enough to see the option
+ * highlight. Two seconds reads as the form having frozen.
+ */
+const AUTO_ADVANCE_MS = 700;
+
+/**
+ * Types where picking an option is the whole answer, so there is nothing to type
+ * and nothing to confirm — the flow can move on by itself.
+ *
+ * Multi-select is excluded even though it is a choice type: a respondent selecting
+ * "Web app" may be about to select "Mobile app" too, and advancing under them would
+ * lose that.
+ */
+function advancesOnSelect(question: Question): boolean {
+  if (question.type === "yes_no" || question.type === "rating") return true;
+  if (question.type === "multiple_choice" || question.type === "dropdown") {
+    return !question.allow_multiple;
+  }
+  return false;
+}
 
 /**
  * The public form-filling experience.
@@ -65,6 +89,17 @@ export function FormRunner({ form }: { form: PublicForm }) {
   const progress = form.questions.length
     ? (answeredCount / form.questions.length) * 100
     : 0;
+
+  /** Pending auto-advance, so it can be cancelled if anything else happens first. */
+  const advanceTimer = useRef<number | null>(null);
+  const cancelAutoAdvance = useCallback(() => {
+    if (advanceTimer.current !== null) {
+      window.clearTimeout(advanceTimer.current);
+      advanceTimer.current = null;
+    }
+  }, []);
+
+  useEffect(() => cancelAutoAdvance, [cancelAutoAdvance]);
 
   const jumpTo = useCallback(
     (questionIndex: number, message: string) => {
@@ -122,6 +157,7 @@ export function FormRunner({ form }: { form: PublicForm }) {
   }, [answers, form.questions, form.slug, jumpTo]);
 
   const advance = useCallback(() => {
+    cancelAutoAdvance();
     if (step.kind === "question") {
       const question = form.questions[step.index];
       const message = validateAnswer(question, answers[question.id] ?? null);
@@ -138,21 +174,41 @@ export function FormRunner({ form }: { form: PublicForm }) {
     setError(null);
     setDirection(1);
     setCursor((current) => Math.min(current + 1, steps.length - 1));
-  }, [step, form.questions, answers, isLastQuestion, submit, steps.length]);
+  }, [cancelAutoAdvance, step, form.questions, answers, isLastQuestion, submit, steps.length]);
 
   const goBack = useCallback(() => {
     // Never validates: a respondent must always be able to return to a question
     // they left incomplete.
+    cancelAutoAdvance();
     setError(null);
     setDirection(-1);
     setCursor((current) => Math.max(current - 1, 0));
-  }, []);
+  }, [cancelAutoAdvance]);
 
-  const setAnswer = useCallback((questionId: number, value: AnswerValue) => {
-    setAnswers((current) => ({ ...current, [questionId]: value }));
-    // Clear the message as soon as they start fixing it.
-    setError(null);
-  }, []);
+  const setAnswer = useCallback(
+    (questionId: number, value: AnswerValue) => {
+      setAnswers((current) => ({ ...current, [questionId]: value }));
+      // Clear the message as soon as they start fixing it.
+      setError(null);
+
+      cancelAutoAdvance();
+      if (step.kind !== "question") return;
+
+      const question = form.questions[step.index];
+      // Not on the last question: that would submit the form without the respondent
+      // ever pressing Submit.
+      if (question.id !== questionId || isLastQuestion) return;
+      if (!advancesOnSelect(question) || isEmptyAnswer(value)) return;
+
+      advanceTimer.current = window.setTimeout(() => {
+        advanceTimer.current = null;
+        setError(null);
+        setDirection(1);
+        setCursor((current) => Math.min(current + 1, steps.length - 1));
+      }, AUTO_ADVANCE_MS);
+    },
+    [cancelAutoAdvance, step, form.questions, isLastQuestion, steps.length],
+  );
 
   useEffect(() => {
     if (submitted) return;

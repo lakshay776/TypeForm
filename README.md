@@ -4,8 +4,7 @@ A functional clone of Typeform: a drag-and-drop form builder, publishable sharea
 links, the signature one-question-at-a-time respondent experience, and a results
 view with per-question summary statistics.
 
-> **Status:** backend complete and tested. Frontend: creator dashboard, form builder
-> and public respondent flow complete; the results view is in progress.
+> **Status:** all core features complete and tested. Remaining: deployment.
 
 ## Tech stack
 
@@ -280,10 +279,19 @@ Each beat advances from motion's `onAnimationComplete` rather than chained timer
 so the sequence can't drift from the animation it describes and there is nothing to
 clear on unmount.
 
-If the form isn't publishable, the `problems` checklist renders inline instead
-("Question 1 needs a title."). This is the case that reads as "Share is broken" when
-it's really the API refusing to publish something incomplete, so the reason has to
-be on the page rather than in a toast.
+If the form isn't publishable, the `problems` checklist renders inline instead — on
+the page rather than in a toast, since this is the case that otherwise reads as
+"Share is broken".
+
+Only conditions that make a form genuinely *unanswerable* block publishing: no
+questions at all, or a choice question with no options. A missing question title is
+incomplete rather than broken, so it publishes and renders as a `…` placeholder — the
+way Typeform does it. Blocking there would stop a creator sharing a draft they are
+still wording.
+
+`questionLabel()` in `lib/format.ts` is the single source of that placeholder, used
+by the pages panel, respondent flow, summary, responses table and response drawer, so
+an untitled question looks the same everywhere it appears.
 
 **The link is editable** (`PATCH /forms/{id}` with `slug`). Not a brief requirement,
 added because it's visible in the UI being matched. Three things it has to get right:
@@ -339,6 +347,50 @@ frontend sent `slug` to a backend that predated it and the UI cheerfully reporte
 - **Everything is rechecked before submit.** A respondent can reach the last
   question, go back, clear a required answer and come forward again; per-question
   validation alone would miss that.
+- **Selection-only questions advance themselves.** Picking an answer on a yes/no,
+  rating, dropdown or single-select choice question moves on after 700ms — there is
+  nothing to type and nothing to confirm. Excluded: **multi-select**, because
+  somebody choosing "Web app" may be about to choose "Mobile app" too; and the
+  **last question**, because advancing there would submit the form without the
+  respondent ever pressing Submit. Any manual navigation cancels a pending advance,
+  as does unmounting.
+- **Dropdowns are a themed listbox, not a native `<select>`.** A native select
+  renders its options through the operating system, so the form's theme can't reach
+  them — a dark form gets a light OS menu — and the A/B/C keys can't be shown at all.
+  It reuses the same `ChoiceOption` card as the other choice types, so a dropdown and
+  a multiple choice look like the same form.
+- **Welcome and ending screens are centred; question screens are left-aligned**,
+  matching the builder canvas and the live preview.
+
+### Results
+
+Two sub-tabs under `/forms/{id}/results`, covering the brief's four points:
+
+- **Summary** — per-question stats. Choice and dropdown questions get the
+  Choices / Responses / Percentages table the brief names; yes/no and rating get the
+  same shape; number questions get average, lowest and highest; free-text questions
+  list their latest answers with a pointer to the Responses tab for the rest.
+- **Responses** — one row per submission, one column per question, scrolling
+  sideways for wide forms. Columns come from the form definition rather than from
+  the answers present, so a skipped question shows `–` instead of shifting the grid.
+  The timestamp column is sticky, so a row stays identifiable once the question
+  columns have scrolled past.
+- **An individual response in full** — clicking a row opens a drawer. It iterates the
+  *form's questions*, not the answers returned, because a skipped optional question
+  writes no answer row: iterating answers alone would silently omit it, and
+  "they didn't answer this" is information the creator wants. Long text is shown
+  complete here, since the table truncates.
+- **CSV export** — a plain link, so the browser handles the download and honours the
+  `Content-Disposition` filename the API sends.
+
+Both datasets load once on mount rather than per sub-tab, so switching is instant
+and the response count in the tab label is right before that tab is opened.
+
+Deliberately **not** built, because they aren't in the brief and would need data the
+app doesn't record: Typeform's *Insights / Big picture* panel (views, starts,
+drop-off — no page-view tracking exists, so those numbers would be invented) and
+*Smart Insights*. The form-level figures shown are only the three that are real:
+submissions, completion rate and average time to complete.
 
 ### Answer validation, on both sides
 

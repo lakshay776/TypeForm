@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ActionButton, EnterHint } from "@/components/respondent/Chrome";
 import { AnswerField, type AnswerValue } from "@/components/form/AnswerField";
 import { AlertCircle, Check } from "@/components/ui/Icons";
+import { questionLabel } from "@/lib/format";
 import type { PublicForm, Question } from "@/lib/types";
 
 /** Shared content column: left-aligned, centred in the viewport. */
@@ -16,8 +17,10 @@ function Column({ children, className }: { children: React.ReactNode; className?
 export function WelcomeScreen({ form, onStart }: { form: PublicForm; onStart: () => void }) {
   const { theme } = form;
 
+  // Centred to match the builder canvas and the live preview. Question screens stay
+  // left-aligned; it's only the welcome and ending screens that centre.
   return (
-    <Column>
+    <Column className="text-center">
       <h1
         className="text-[38px] leading-[1.15] font-semibold tracking-[-0.02em] sm:text-[44px]"
         style={{ color: theme.question_color }}
@@ -27,14 +30,14 @@ export function WelcomeScreen({ form, onStart }: { form: PublicForm; onStart: ()
 
       {form.welcome_description && (
         <p
-          className="mt-4 max-w-[640px] text-[18px] leading-relaxed"
+          className="mx-auto mt-4 max-w-[640px] text-[18px] leading-relaxed"
           style={{ color: theme.answer_color }}
         >
           {form.welcome_description}
         </p>
       )}
 
-      <div className="mt-10 flex flex-wrap items-center gap-4">
+      <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
         <ActionButton theme={theme} onClick={onStart}>
           {form.welcome_button_label || "Start"}
         </ActionButton>
@@ -86,7 +89,7 @@ export function QuestionScreen({
             className="text-[27px] leading-[1.3] font-medium tracking-[-0.01em] sm:text-[30px]"
             style={{ color: theme.question_color }}
           >
-            {question.title || "Untitled question"}
+            {questionLabel(question.title)}
             {question.is_required && (
               <span style={{ color: theme.button_color }} title="Required">
                 {" *"}

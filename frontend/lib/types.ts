@@ -123,6 +123,97 @@ export interface FieldIssue {
   message: string;
 }
 
+/* --------------------------------------------------------------------------- */
+/* Results                                                                     */
+/* --------------------------------------------------------------------------- */
+
+/** One row of the responses table. `answers` is keyed by question id. */
+export interface ResponseListItem {
+  id: number;
+  token: string;
+  is_complete: boolean;
+  submitted_at: string | null;
+  duration_seconds: number | null;
+  /** JSON object keys are strings, so question ids arrive stringified. */
+  answers: Record<string, string>;
+}
+
+export interface ResponsePage {
+  total: number;
+  limit: number;
+  offset: number;
+  items: ResponseListItem[];
+}
+
+/**
+ * A stored answer, flattened for display.
+ *
+ * `display_value` is the server's single rendering of the answer, shared by the
+ * table, this detail view and the CSV export so the three can't disagree.
+ */
+export interface AnswerOut {
+  question_id: number;
+  question_title: string;
+  question_type: QuestionType;
+  position: number;
+  display_value: string;
+  text: string | null;
+  number: number | null;
+  boolean: boolean | null;
+  rating: number | null;
+  selected_option_ids: number[];
+}
+
+export interface ResponseDetail {
+  id: number;
+  token: string;
+  is_complete: boolean;
+  started_at: string;
+  submitted_at: string | null;
+  duration_seconds: number | null;
+  answers: AnswerOut[];
+}
+
+export interface OptionCount {
+  option_id: number;
+  label: string;
+  count: number;
+  percentage: number;
+}
+
+export interface RatingBucket {
+  value: number;
+  count: number;
+}
+
+/** Per-question aggregate. Only the fields relevant to the type are populated. */
+export interface QuestionSummary {
+  question_id: number;
+  type: QuestionType;
+  title: string;
+  position: number;
+  answered_count: number;
+  skipped_count: number;
+  option_counts: OptionCount[] | null;
+  yes_count: number | null;
+  no_count: number | null;
+  average: number | null;
+  minimum: number | null;
+  maximum: number | null;
+  rating_distribution: RatingBucket[] | null;
+  recent_answers: string[] | null;
+}
+
+export interface FormStats {
+  form_id: number;
+  title: string;
+  total_responses: number;
+  completed_responses: number;
+  completion_rate: number;
+  average_duration_seconds: number | null;
+  questions: QuestionSummary[];
+}
+
 export interface Creator {
   id: number;
   email: string;

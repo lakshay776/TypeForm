@@ -1,9 +1,11 @@
 "use client";
 
+import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
+
 import { ChoiceOption } from "@/components/form/ChoiceOption";
 import { ChevronDown } from "@/components/ui/Icons";
 import { cn } from "@/lib/format";
-import { optionKey } from "@/lib/questionTypes";
 import type { FormTheme, Question } from "@/lib/types";
 
 /** The value shape an answer can take, matching what the API accepts. */
@@ -144,31 +146,13 @@ export function AnswerField({
 
     case "dropdown":
       return (
-        <div className="relative w-full max-w-[620px]">
-          <select
-            value={Array.isArray(value) && value.length > 0 ? String(value[0]) : ""}
-            onChange={(event) =>
-              onChange(event.target.value ? [Number(event.target.value)] : [])
-            }
-            disabled={disabled}
-            autoFocus={autoFocus}
-            aria-label={question.title || "Your answer"}
-            className="w-full appearance-none border-b-[1.5px] bg-transparent pb-2 pr-8 text-[24px] outline-none disabled:cursor-default"
-            style={{ color: answerColor, borderColor: `${answerColor}4d` }}
-          >
-            <option value="">Type or select an option</option>
-            {question.options.map((option, index) => (
-              <option key={option.id} value={option.id}>
-                {optionKey(index)} — {option.label || "Choice"}
-              </option>
-            ))}
-          </select>
-          <ChevronDown
-            size={22}
-            className="pointer-events-none absolute right-1 bottom-3"
-            style={{ color: answerColor }}
-          />
-        </div>
+        <DropdownField
+          question={question}
+          value={value}
+          onChange={onChange}
+          theme={theme}
+          disabled={disabled}
+        />
       );
 
     case "yes_no":
@@ -230,6 +214,109 @@ export function AnswerField({
       );
     }
   }
+}
+
+/**
+ * Themed dropdown.
+ *
+ * A native `<select>` renders its option list through the operating system, so the
+ * form's theme cannot reach it — on a dark theme you get a light OS menu, and the
+ * A/B/C keys can't be shown at all. This is a listbox built from the same
+ * `ChoiceOption` card the other choice types use, so a dropdown and a multiple
+ * choice look like the same form.
+ */
+function DropdownField({
+  question,
+  value,
+  onChange,
+  theme,
+  disabled,
+}: {
+  question: Question;
+  value: AnswerValue;
+  onChange: (value: AnswerValue) => void;
+  theme: FormTheme;
+  disabled: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const selectedId = Array.isArray(value) && value.length > 0 ? value[0] : null;
+  const selected = question.options.find((option) => option.id === selectedId);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        // Stopped so the surrounding flow doesn't also act on Escape.
+        event.stopPropagation();
+        setOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div ref={containerRef} className="w-full max-w-[620px]">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen((current) => !current)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={question.title || "Your answer"}
+        className="flex w-full items-center gap-3 border-b-[1.5px] bg-transparent pb-2 text-left text-[24px] disabled:cursor-default"
+        style={{ color: theme.answer_color, borderColor: `${theme.answer_color}4d` }}
+      >
+        <span className={cn("min-w-0 flex-1 truncate", !selected && "opacity-55")}>
+          {selected ? selected.label || "Choice" : question.placeholder || "Select an option"}
+        </span>
+        <ChevronDown
+          size={22}
+          className={cn("shrink-0 transition-transform duration-200", open && "rotate-180")}
+        />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.ul
+            role="listbox"
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+            className="scrollbar-slim mt-3 flex max-h-[320px] flex-col gap-2.5 overflow-y-auto"
+          >
+            {question.options.map((option, index) => (
+              <li key={option.id} role="option" aria-selected={option.id === selectedId}>
+                <ChoiceOption
+                  index={index}
+                  selected={option.id === selectedId}
+                  answerColor={theme.answer_color}
+                  buttonColor={theme.button_color}
+                  onClick={() => {
+                    onChange(option.id === selectedId ? [] : [option.id]);
+                    setOpen(false);
+                  }}
+                  className="cursor-pointer"
+                >
+                  {option.label || <span className="italic opacity-55">Choice</span>}
+                </ChoiceOption>
+              </li>
+            ))}
+          </motion.ul>
+        )}
+      </AnimatePresence>
+    </div>
+  );
 }
 
 function RatingGlyph({ shape, filled }: { shape: string; filled: boolean }) {

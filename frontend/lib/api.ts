@@ -4,11 +4,14 @@ import type {
   FormDetail,
   FormStatus,
   FormSummary,
+  FormStats,
   FormUpdatePayload,
   PublicForm,
   Question,
   QuestionPayload,
   ResponseCreated,
+  ResponseDetail,
+  ResponsePage,
   ResponseSubmission,
 } from "@/lib/types";
 
@@ -151,6 +154,17 @@ export const api = {
         method: "PUT",
         body: { question_ids: questionIds },
       }),
+  },
+
+  results: {
+    /** Per-question aggregates for the Summary tab. */
+    summary: (formId: number) => request<FormStats>(`/forms/${formId}/summary`),
+
+    responses: (formId: number, params: { limit?: number; offset?: number } = {}) =>
+      request<ResponsePage>(`/forms/${formId}/responses`, { query: params }),
+
+    response: (formId: number, responseId: number) =>
+      request<ResponseDetail>(`/forms/${formId}/responses/${responseId}`),
   },
 
   /** Unauthenticated endpoints backing the respondent flow. */

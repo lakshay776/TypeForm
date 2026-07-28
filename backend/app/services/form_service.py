@@ -295,11 +295,12 @@ class FormNotPublishable(Exception):
 
 
 def publish_blockers(form: Form) -> list[str]:
-    """Everything preventing this form from going live.
+    """Everything genuinely preventing this form from going live.
 
-    The builder deliberately allows a half-finished form to be saved — you cannot
-    type a question title without first creating an empty one. Publishing is
-    therefore the point where completeness is enforced, rather than every write.
+    Only conditions that make the form *unanswerable* count. A missing question
+    title or a blank option label is incomplete rather than broken — the UI shows a
+    placeholder for it, the same way Typeform does — so refusing to publish over
+    that would block a creator from sharing a draft they are still wording.
     """
     problems: list[str] = []
 
@@ -307,15 +308,10 @@ def publish_blockers(form: Form) -> list[str]:
         problems.append("Add at least one question.")
 
     for question in form.questions:
-        number = question.position + 1
-        if not question.title.strip():
-            problems.append(f"Question {number} needs a title.")
-
-        if question.type in CHOICE_TYPES:
-            if not question.options:
-                problems.append(f"Question {number} needs at least one option.")
-            elif any(not option.label.strip() for option in question.options):
-                problems.append(f"Question {number} has an option with no label.")
+        # A choice question with nothing to choose from cannot be answered at all.
+        # The create/update schemas already reject this, so it is a backstop.
+        if question.type in CHOICE_TYPES and not question.options:
+            problems.append(f"Question {question.position + 1} needs at least one option.")
 
     return problems
 

@@ -7,7 +7,7 @@ import { AnswerField, type AnswerValue } from "@/components/form/AnswerField";
 import { IconButton } from "@/components/ui/Button";
 import { AlertCircle, Check, ChevronDown, ChevronUp, Close } from "@/components/ui/Icons";
 import { isEmptyAnswer, validateAnswer } from "@/lib/answerValidation";
-import { cn } from "@/lib/format";
+import { cn, questionLabel } from "@/lib/format";
 import type { DeviceMode } from "@/components/builder/CanvasToolbar";
 import type { FormDetail } from "@/lib/types";
 
@@ -318,7 +318,7 @@ function QuestionStep({
             className="text-[28px] leading-[1.25] font-medium tracking-[-0.01em]"
             style={{ color: theme.question_color }}
           >
-            {question.title || "Your question here"}
+            {questionLabel(question.title)}
             {question.is_required && (
               <span style={{ color: theme.button_color }} title="Required">
                 {" *"}

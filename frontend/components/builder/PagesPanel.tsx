@@ -23,7 +23,7 @@ import { Dropdown, MenuDivider, MenuItem } from "@/components/ui/Dropdown";
 import { ChevronRight, Copy, Dots, Plus, Trash } from "@/components/ui/Icons";
 import { IconEndScreen, IconWelcomeScreen } from "@/components/ui/TypeIcons";
 import { ACCENT_CLASSES, TYPE_META } from "@/lib/questionTypes";
-import { cn } from "@/lib/format";
+import { cn, questionLabel } from "@/lib/format";
 import type { Question } from "@/lib/types";
 import type { Selection } from "@/hooks/useBuilder";
 
@@ -354,7 +354,7 @@ function SortableQuestion({
           {...attributes}
           {...listeners}
           className="flex min-w-0 flex-1 cursor-grab items-center gap-2.5 text-left active:cursor-grabbing"
-          aria-label={`Question ${number}: ${question.title || "Untitled"}`}
+          aria-label={`Question ${number}: ${questionLabel(question.title)}`}
         >
           <span
             className={cn(
@@ -372,7 +372,7 @@ function SortableQuestion({
               question.title ? "text-ink" : "text-ink-faint italic",
             )}
           >
-            {question.title || "Your question here"}
+            {questionLabel(question.title)}
           </span>
           {question.is_required && (
             <span className="shrink-0 text-[13px] text-ink-faint" title="Required">

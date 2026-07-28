@@ -1,13 +1,14 @@
 import { notFound } from "next/navigation";
 
-import { ResultsPlaceholder } from "@/components/results/ResultsPlaceholder";
+import { ResultsView } from "@/components/results/ResultsView";
 import { api } from "@/lib/api";
 
 /**
- * The Results tab.
+ * The Results tab: per-question summary statistics and the submissions table.
  *
- * Currently a placeholder body inside the real chrome, so the tab navigation is
- * complete while the summary and responses views are built.
+ * The form definition is fetched on the server because the responses table needs
+ * one column per question before it can render anything; the results themselves
+ * load client-side, since paging and opening a response are interactive.
  */
 export default async function FormResultsPage({ params }: PageProps<"/forms/[formId]">) {
   const { formId } = await params;
@@ -17,5 +18,5 @@ export default async function FormResultsPage({ params }: PageProps<"/forms/[for
   const form = await api.forms.get(id).catch(() => null);
   if (!form) notFound();
 
-  return <ResultsPlaceholder form={form} />;
+  return <ResultsView form={form} />;
 }

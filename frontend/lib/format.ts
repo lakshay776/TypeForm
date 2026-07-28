@@ -22,6 +22,20 @@ export function formatDate(iso: string | null): string {
   }).format(new Date(iso));
 }
 
+/**
+ * What to show where a question has no title yet.
+ *
+ * A question can be saved before it is worded — the builder has to create it before
+ * you can type into it — so every surface that displays a title needs a stand-in.
+ * One helper so the pages panel, canvas, respondent flow, summary, responses table
+ * and CSV can't disagree about what an untitled question looks like.
+ */
+export const UNTITLED_QUESTION = "…";
+
+export function questionLabel(title: string): string {
+  return title.trim() || UNTITLED_QUESTION;
+}
+
 /** Dashes for zero, so an untouched form reads as empty rather than "0". */
 export function formatCount(value: number): string {
   return value === 0 ? "-" : String(value);

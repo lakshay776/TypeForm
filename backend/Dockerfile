@@ -10,6 +10,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Migrations run at container start rather than build time, because the SQLite
-# file lives on a volume that only exists at runtime.
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Migrations and seeding run at container start rather than build time, because
+# the SQLite file lives on a volume that only exists at runtime — at build time
+# the mount point doesn't exist yet.
+#
+# `--if-empty` is what makes this safe to run on every deploy: it seeds a fresh
+# database and leaves a populated one untouched, so a redeploy never destroys
+# responses collected from the live link.
+CMD ["sh", "-c", "alembic upgrade head && python -m app.seed --if-empty && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

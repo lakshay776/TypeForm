@@ -13,9 +13,10 @@ of quietly producing unreachable data.
 from __future__ import annotations
 
 import random
+import sys
 from datetime import timedelta
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.core.database import Base, SessionLocal, engine, utcnow
@@ -382,5 +383,29 @@ def _report(forms: list, email: str) -> None:
         )
 
 
-if __name__ == "__main__":
+def seed_if_empty() -> bool:
+    """Seed only when the database holds no forms. Returns whether it seeded.
+
+    This is what runs on deploy. :func:`seed` deletes everything first, so calling
+    it unconditionally at container start would wipe real responses on every
+    redeploy — exactly the data the brief requires to persist.
+    """
+    Base.metadata.create_all(bind=engine)
+
+    with SessionLocal() as db:
+        existing = db.scalar(select(func.count(Form.id))) or 0
+
+    if existing:
+        print(f"Database already has {existing} form(s) — leaving it alone.")
+        return False
+
     seed()
+    return True
+
+
+if __name__ == "__main__":
+    # `--if-empty` is for deploys; a bare run is the destructive local reset.
+    if "--if-empty" in sys.argv:
+        seed_if_empty()
+    else:
+        seed()

@@ -1,24 +1,39 @@
-# Render blueprint for the FastAPI backend.
+# Render blueprint for the FastAPI backend — the documented alternative to Railway.
 #
-# SQLite needs a real filesystem that survives restarts, so the service mounts a
-# persistent disk and DATABASE_URL points at it. Without the disk, every deploy
-# would silently reset to an empty database.
+# SQLite is a file, so this service needs a filesystem that survives restarts.
+# Render only attaches persistent disks to *paid* instance types: "You can attach a
+# persistent disk to a paid Render web service, private service, or background
+# worker." A `free` plan with a `disk:` block is rejected, and a free instance's
+# filesystem is wiped on redeploy and after it idles out — which would lose
+# collected responses.
+#
+# Hence `plan: starter`. If you would rather not pay, either deploy to Railway
+# (which allows a volume on every tier — see backend/railway.json) or drop the disk
+# block and point DATABASE_URL at a managed Postgres instead; the app reads its
+# database from that one variable, so no code changes are needed.
+#
+# Note: attaching a disk also disables zero-downtime deploys, because Render must
+# stop the old instance before starting the new one to avoid two versions writing
+# to the same file. A few seconds of downtime per deploy is the right trade here.
 services:
   - type: web
     name: typeform-clone-api
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
-    plan: free
+    plan: starter
     healthCheckPath: /health
     disk:
       name: typeform-data
       mountPath: /var/data
       sizeGB: 1
     envVars:
+      # Four slashes: sqlite://// means an absolute path.
       - key: DATABASE_URL
         value: sqlite:////var/data/typeform.db
-      # Set these two in the Render dashboard once the frontend URL is known.
+      # Set these in the dashboard once the frontend URL is known.
+      # CORS_ORIGINS        e.g. https://your-app.vercel.app
+      # PUBLIC_FORM_BASE_URL e.g. https://your-app.vercel.app/f
       - key: CORS_ORIGINS
         sync: false
       - key: PUBLIC_FORM_BASE_URL

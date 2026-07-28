@@ -591,8 +591,69 @@ still reads sensibly — which means multi-select percentages can sum above 100%
 
 Submissions are spread over recent days so the results view isn't a single
 timestamp, and the random generator is seeded so re-running produces identical data.
-Seeding is idempotent: it clears existing rows first, in foreign-key order, without
-dropping tables — so the Alembic migration history is never bypassed.
+Rows are cleared first in foreign-key order rather than by dropping tables, so the
+Alembic migration history is never bypassed.
+
+Two entry points:
+
+| Command | Behaviour |
+|---|---|
+| `python -m app.seed` | **Destructive.** Wipes and reseeds. For local resets. |
+| `python -m app.seed --if-empty` | Seeds only an empty database; leaves a populated one alone. |
+
+The container runs `--if-empty` on start. Running the destructive version on every
+deploy would delete the responses collected from the live link — the exact data the
+brief requires to persist.
+
+## Deployment
+
+Frontend on **Vercel**, backend on **Railway**.
+
+### Why Railway for the backend
+
+SQLite is a file, so the API needs a filesystem that survives restarts. As of 2026
+that rules out the obvious free options:
+
+| Host | Persistent disk |
+|---|---|
+| Render | Paid instances only — a free instance's filesystem is wiped on redeploy and after it idles out |
+| Fly.io | Volumes are cheap ($0.15/GB/month) but there is no free tier |
+| **Railway** | Volumes on every tier — 0.5 GB on Trial, 5 GB on Hobby |
+
+The database is ~130 KB, so the smallest volume is ample. `render.yaml` is kept as a
+documented alternative, pinned to `plan: starter` because a `free` plan with a disk
+is rejected.
+
+### Order matters
+
+`NEXT_PUBLIC_API_URL` is **inlined into the client bundle at build time**. Deploy the
+backend first, or the frontend will load but every submission will POST to the
+visitor's own `localhost:8000` and fail silently.
+
+**1. Backend → Railway.** New project from this repo, set the service's *Root
+Directory* to `backend` (so `backend/railway.json` and the Dockerfile are picked up),
+then attach a volume and set:
+
+| Variable | Value |
+|---|---|
+| `DATABASE_URL` | `sqlite:////data/typeform.db` — four slashes means an absolute path |
+| volume mount path | `/data` |
+| `CORS_ORIGINS` | your Vercel origin, e.g. `https://your-app.vercel.app` |
+| `PUBLIC_FORM_BASE_URL` | that origin plus `/f` |
+
+`PORT` is provided by Railway and read by the container's start command. On first
+boot it migrates, seeds, and serves; check `/health` and `/docs`.
+
+**2. Frontend → Vercel.** Import the repo with *Root Directory* `frontend`, and set
+`NEXT_PUBLIC_API_URL` to the Railway URL before the first build.
+
+**3. Close the loop.** Vercel assigns the real domain on that first deploy, so go
+back and set `CORS_ORIGINS` and `PUBLIC_FORM_BASE_URL` to it. `PUBLIC_FORM_BASE_URL`
+is what builds every `public_url`, so a stale value means the Share tab hands out
+links pointing at localhost.
+
+Then fill in a form end-to-end on the deployed URL — that exercises CORS, the volume
+and the shareable link in one pass.
 
 ## Assumptions
 

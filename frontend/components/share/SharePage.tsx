@@ -281,8 +281,15 @@ export function SharePage({
                   </div>
 
                   {/* Built from the form's own data, so it reflects what a chat app
-                      would actually unfurl for this link. */}
-                  <div className="mt-3 flex gap-4 rounded-[10px] border border-line p-3.5">
+                      would actually unfurl for this link — and, like a real unfurl,
+                      clicking it opens the form. */}
+                  <a
+                    href={link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Open the form in a new tab"
+                    className="mt-3 flex gap-4 rounded-[10px] border border-line p-3.5 transition-colors hover:border-ink-faint hover:bg-hover"
+                  >
                     <span
                       className="flex h-[72px] w-[104px] shrink-0 items-center justify-center rounded-[6px] text-[13px] font-semibold"
                       style={{
@@ -301,7 +308,7 @@ export function SharePage({
                       </p>
                       <p className="mt-1 truncate text-[13px] text-ink-faint">{hostOf(link)}</p>
                     </div>
-                  </div>
+                  </a>
                 </div>
 
                 <div className="mt-7 flex flex-wrap items-center justify-between gap-3 border-t border-line-soft pt-6">

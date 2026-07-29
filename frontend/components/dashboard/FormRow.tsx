@@ -4,8 +4,8 @@ import { motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
 import { FormActions, FormActionsMenu, StatusPill } from "@/components/dashboard/FormActionsMenu";
-import { Puzzle } from "@/components/ui/Icons";
-import { FORM_THUMBNAIL, cn, formatCount, formatDate } from "@/lib/format";
+import { FormTile, Puzzle } from "@/components/ui/Icons";
+import { cn, formatCount, formatDate } from "@/lib/format";
 import type { FormSummary } from "@/lib/types";
 
 /**
@@ -61,11 +61,9 @@ export function FormRow({
       )}
     >
       <div className="flex min-w-0 items-center gap-3">
-        <span
-          className="h-8 w-8 shrink-0 rounded-[8px]"
-          style={{ background: FORM_THUMBNAIL }}
-          aria-hidden="true"
-        />
+        <span className="shrink-0">
+          <FormTile size={32} />
+        </span>
 
         {renaming ? (
           <RenameField

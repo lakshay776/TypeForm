@@ -288,6 +288,28 @@ export const BarChart = (p: IconProps) => (
   </Svg>
 );
 
+/**
+ * The form tile in the workspace list: a rounded square notched at the top centre.
+ *
+ * Authored as one closed path rather than a rounded `rect` with the notch masked
+ * out. A mask needs an id, and this renders once per row — duplicate ids in the
+ * document would be invalid markup, and generating unique ones per row is a lot
+ * of machinery for a fixed shape. Solid fill for the same reason: an SVG gradient
+ * would also need an id.
+ */
+export function FormTile({ size = 32 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true">
+      <path
+        // Clockwise from the notch vertex: up to the top edge, round each corner,
+        // then back down into the notch.
+        d="M20 7 C21.4 3.5 22.6 0 26 0 L30 0 A10 10 0 0 1 40 10 L40 30 A10 10 0 0 1 30 40 L10 40 A10 10 0 0 1 0 30 L0 10 A10 10 0 0 1 10 0 L14 0 C17.4 0 18.6 3.5 20 7 Z"
+        fill="#A06CBE"
+      />
+    </svg>
+  );
+}
+
 /** Hamburger — opens the sidebar drawer on narrow screens. */
 export const Menu = (p: IconProps) => (
   <Svg {...p}>

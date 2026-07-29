@@ -45,7 +45,7 @@ export function NavTabs() {
   return (
     <>
       <nav
-        className="flex h-[62px] shrink-0 items-end gap-1 border-b border-line px-5"
+        className="flex h-[52px] shrink-0 items-end gap-1 border-b border-line px-5"
         aria-label="Sections"
       >
         {TABS.map((tab) => (

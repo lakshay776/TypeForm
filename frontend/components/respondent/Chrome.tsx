@@ -112,36 +112,5 @@ function StepButton({
   );
 }
 
-/** "press Enter ↵" hint shown beside the OK / Submit button. */
-export function EnterHint({ theme, label = "Enter" }: { theme: FormTheme; label?: string }) {
-  return (
-    <span className="text-[13px]" style={{ color: `${theme.answer_color}99` }}>
-      press <strong className="font-semibold">{label}</strong> ↵
-    </span>
-  );
-}
-
-/** The dark primary action: OK on a question, Submit on the last one. */
-export function ActionButton({
-  theme,
-  onClick,
-  loading = false,
-  children,
-}: {
-  theme: FormTheme;
-  onClick: () => void;
-  loading?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={loading}
-      className="rounded-[6px] px-6 py-3 text-[17px] font-semibold transition-transform hover:scale-[1.02] disabled:cursor-wait disabled:opacity-70"
-      style={{ background: theme.button_color, color: theme.button_text_color }}
-    >
-      {loading ? "Submitting…" : children}
-    </button>
-  );
-}
+// ActionButton and EnterHint moved to components/form/Screens.tsx — they are used
+// by the screens themselves, which the builder's preview now shares.

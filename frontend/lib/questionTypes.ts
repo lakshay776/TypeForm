@@ -10,7 +10,7 @@ import {
   IconShortText,
   IconYesNo,
 } from "@/components/ui/TypeIcons";
-import type { QuestionType } from "@/lib/types";
+import type { Question, QuestionType } from "@/lib/types";
 
 type Icon = ComponentType<SVGProps<SVGSVGElement> & { size?: number }>;
 
@@ -219,4 +219,32 @@ const PLACEHOLDER_BY_TYPE: Partial<Record<QuestionType, string>> = {
 /** Option letter keys — A, B, C … the respondent can press to select. */
 export function optionKey(index: number): string {
   return String.fromCharCode(65 + (index % 26));
+}
+
+/**
+ * How long a chosen answer stays on screen before the flow moves on.
+ *
+ * Long enough to see which option took the highlight, short enough to still read
+ * as a response to the click.
+ *
+ * Lives here rather than in either runner so the builder's preview and the public
+ * flow advance identically — a preview that moves on at a different moment than
+ * the real form is worse than no preview.
+ */
+export const AUTO_ADVANCE_MS = 1000;
+
+/**
+ * Types where picking an option is the whole answer, so there is nothing to type
+ * and nothing to confirm — the flow can move on by itself.
+ *
+ * Multi-select is excluded even though it is a choice type: a respondent selecting
+ * "Web app" may be about to select "Mobile app" too, and advancing under them
+ * would lose that.
+ */
+export function advancesOnSelect(question: Question): boolean {
+  if (question.type === "yes_no" || question.type === "rating") return true;
+  if (question.type === "multiple_choice" || question.type === "dropdown") {
+    return !question.allow_multiple;
+  }
+  return false;
 }

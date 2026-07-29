@@ -194,13 +194,16 @@ export const Send = (p: IconProps) => (
 );
 
 /**
- * The outlined right-pointing triangle on the Share button.
+ * The paper plane on the Share button.
  *
- * Drawn open (no enclosing box) so it reads as "send" rather than "play".
+ * The notch on the trailing edge and the line through the middle are what stop a
+ * right-pointing triangle from reading as "play" — which is what the previous
+ * plain triangle did, on a button that sits next to an actual preview control.
  */
 export const ShareArrow = (p: IconProps) => (
   <Svg {...p}>
-    <path d="M5.6 4.2l13.6 7.8-13.6 7.8V4.2z" />
+    <path d="M2.7 4.9L21.3 12 2.7 19.1 5.1 12 2.7 4.9z" />
+    <path d="M5.1 12h6.2" />
   </Svg>
 );
 

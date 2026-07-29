@@ -9,7 +9,6 @@ import { SummaryTab } from "@/components/results/SummaryTab";
 import { Button, Spinner } from "@/components/ui/Button";
 import { AlertCircle } from "@/components/ui/Icons";
 import { ComingSoonModal } from "@/components/ui/Modal";
-import { RouteReveal } from "@/components/ui/RouteReveal";
 import { ApiError, api, exportUrl } from "@/lib/api";
 import { cn } from "@/lib/format";
 import type {
@@ -108,8 +107,6 @@ export function ResultsView({ form }: { form: FormDetail }) {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-sidebar">
-      <RouteReveal />
-
       <FormTopBar form={form} active="results" onPlaceholder={setPlaceholder} />
 
       <nav

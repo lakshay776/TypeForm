@@ -33,7 +33,7 @@ export function TopBar({ creator }: { creator: Creator | null }) {
 
   return (
     <>
-      <header className="flex h-[68px] shrink-0 items-center justify-between gap-4 bg-canvas px-5">
+      <header className="flex h-[58px] shrink-0 items-center justify-between gap-4 bg-canvas px-5">
         <div className="flex items-center gap-2.5">
           <LogoMark size={30} />
 

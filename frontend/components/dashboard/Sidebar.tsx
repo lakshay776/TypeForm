@@ -34,7 +34,7 @@ export function Sidebar({
       <div className="px-5 pt-7 pb-5">
         <Button
           variant="primary"
-          size="lg"
+          size="md"
           onClick={onCreateForm}
           disabled={creating}
           className="w-full font-semibold"

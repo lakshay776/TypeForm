@@ -7,7 +7,6 @@ import { PublishBurst } from "@/components/share/PublishBurst";
 import { Button } from "@/components/ui/Button";
 import { ChevronDown, Copy, ExternalLink, Globe, Pencil } from "@/components/ui/Icons";
 import { ComingSoonModal } from "@/components/ui/Modal";
-import { RouteReveal } from "@/components/ui/RouteReveal";
 import { useToast } from "@/components/ui/Toast";
 import { ApiError, api, publishProblems } from "@/lib/api";
 import { cn } from "@/lib/format";
@@ -123,13 +122,10 @@ export function SharePage({
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-sidebar">
-      {/* The publish burst replaces the plain reveal when a form has just gone
-          live, so the two animations never stack on top of each other. */}
-      {burst ? (
-        <PublishBurst onDone={() => setBurst(false)} />
-      ) : (
-        <RouteReveal />
-      )}
+      {/* Only going live is worth animating. Playing a reveal on every arrival
+          meant the wipe fired when simply switching tabs, which reads as the app
+          reloading rather than as something having happened. */}
+      {burst && <PublishBurst onDone={() => setBurst(false)} />}
 
       <FormTopBar form={form} active="share" onPlaceholder={setPlaceholder} />
 

@@ -28,6 +28,17 @@ const TABS: TabDef[] = [
   { id: "results", label: "Results", path: (id) => `/forms/${id}/results` },
 ];
 
+/**
+ * Tabs that only mean something once a form is live: a draft has no link to hand
+ * out and no responses to summarise, so both would open a page that can only say
+ * "nothing here yet".
+ *
+ * The *routes* stay reachable while a form is a draft — the top bar's Share
+ * button navigates to `/share?publish=1` to publish, which is the only way a form
+ * goes live. Hiding the tab is not the same as blocking the page.
+ */
+const PUBLISHED_ONLY = new Set<FormTab>(["share", "results"]);
+
 interface FormTopBarProps {
   form: FormDetail;
   active: FormTab;
@@ -68,8 +79,16 @@ export function FormTopBar({
     else onPlaceholder(tab.label);
   };
 
+  // `|| tab.id === active` keeps the current tab visible even when gated: arriving
+  // via the Share button publishes on load, and until that request lands the page
+  // would otherwise render with no tab marked as current.
+  const published = form.status === "published";
+  const visibleTabs = TABS.filter(
+    (tab) => published || !PUBLISHED_ONLY.has(tab.id) || tab.id === active,
+  );
+
   return (
-    <header className="relative flex h-[72px] shrink-0 items-center justify-between gap-4 border-b border-line bg-canvas px-5">
+    <header className="relative flex h-[58px] shrink-0 items-center justify-between gap-4 border-b border-line bg-canvas px-5">
       <div className="flex min-w-0 items-center gap-2">
         <Link
           href="/"
@@ -121,7 +140,7 @@ export function FormTopBar({
         className="absolute left-1/2 flex -translate-x-1/2 items-center gap-1"
         aria-label="Form sections"
       >
-        {TABS.map((tab) => (
+        {visibleTabs.map((tab) => (
           <button
             key={tab.id}
             type="button"

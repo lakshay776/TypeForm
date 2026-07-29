@@ -48,7 +48,7 @@
   --radius-control: 8px;
 
   /* Sidebar width, referenced by both the sidebar and the nav tab rail. */
-  --spacing-sidebar: 318px;
+  --spacing-sidebar: 272px;
 }
 
 @layer base {

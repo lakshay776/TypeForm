@@ -4,41 +4,14 @@ import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { BottomBar, ProgressBar } from "@/components/respondent/Chrome";
-import {
-  QuestionScreen,
-  ThankYouScreen,
-  WelcomeScreen,
-} from "@/components/respondent/Screens";
+import { QuestionScreen, ThankYouScreen, WelcomeScreen } from "@/components/form/Screens";
 import type { AnswerValue } from "@/components/form/AnswerField";
 import { ApiError, answerIssues, api } from "@/lib/api";
 import { isEmptyAnswer, validateAnswer } from "@/lib/answerValidation";
-import type { AnswerSubmission, PublicForm, Question, ResponseCreated } from "@/lib/types";
+import { AUTO_ADVANCE_MS, advancesOnSelect } from "@/lib/questionTypes";
+import type { AnswerSubmission, PublicForm, ResponseCreated } from "@/lib/types";
 
 type Step = { kind: "welcome" } | { kind: "question"; index: number };
-
-/**
- * How long a chosen answer stays on screen before the flow moves on.
- *
- * Short enough to feel like a response to the click, long enough to see the option
- * highlight. Two seconds reads as the form having frozen.
- */
-const AUTO_ADVANCE_MS = 700;
-
-/**
- * Types where picking an option is the whole answer, so there is nothing to type
- * and nothing to confirm — the flow can move on by itself.
- *
- * Multi-select is excluded even though it is a choice type: a respondent selecting
- * "Web app" may be about to select "Mobile app" too, and advancing under them would
- * lose that.
- */
-function advancesOnSelect(question: Question): boolean {
-  if (question.type === "yes_no" || question.type === "rating") return true;
-  if (question.type === "multiple_choice" || question.type === "dropdown") {
-    return !question.allow_multiple;
-  }
-  return false;
-}
 
 /**
  * The public form-filling experience.

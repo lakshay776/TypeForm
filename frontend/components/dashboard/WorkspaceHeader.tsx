@@ -27,7 +27,7 @@ export function WorkspaceHeader({
   return (
     <div className="flex flex-wrap items-center justify-between gap-4">
       <div className="flex items-center gap-3">
-        <h1 className="text-[30px] leading-none font-semibold tracking-[-0.02em] text-ink">
+        <h1 className="text-[24px] leading-none font-semibold tracking-[-0.02em] text-ink sm:text-[30px]">
           My workspace
         </h1>
 

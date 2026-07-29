@@ -89,6 +89,8 @@ class FormSummary(ORMModel):
     response_count: int = 0
     #: Absolute shareable link, present only once the form is published.
     public_url: Optional[str] = None
+    #: True when a live form has been edited since it was last published.
+    has_unpublished_edits: bool = False
 
 
 class FormDetail(FormSummary):

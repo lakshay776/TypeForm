@@ -66,6 +66,8 @@ export interface FormSummary {
   question_count: number;
   response_count: number;
   public_url: string | null;
+  /** True when a live form has been edited since it was last published. */
+  has_unpublished_edits: boolean;
 }
 
 /** Full definition used by the builder. */

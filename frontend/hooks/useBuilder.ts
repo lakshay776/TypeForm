@@ -144,8 +144,26 @@ export function useBuilder(formId: number): UseBuilderResult {
     }
   }, []);
 
+  /**
+   * Flag locally that the live form is now behind the builder.
+   *
+   * Applied optimistically rather than read back from the save response: saves are
+   * debounced and fire-and-forget, so merging a response would either arrive too
+   * late to show the button or overwrite edits typed while it was in flight. The
+   * rule is simple enough to mirror — the server flags any edit to a published
+   * form — and `setPublished` merges the real response, so the clear is authoritative.
+   */
+  const markEdited = useCallback(() => {
+    setForm((current) =>
+      current && current.status === "published" && !current.has_unpublished_edits
+        ? { ...current, has_unpublished_edits: true }
+        : current,
+    );
+  }, []);
+
   const schedule = useCallback(
     (key: string, task: () => Promise<unknown>) => {
+      markEdited();
       pending.current.set(key, task);
       const existing = timers.current.get(key);
       if (existing) window.clearTimeout(existing);
@@ -157,7 +175,7 @@ export function useBuilder(formId: number): UseBuilderResult {
         }, AUTOSAVE_DELAY_MS),
       );
     },
-    [runSave],
+    [runSave, markEdited],
   );
 
   // Flush anything still debounced when the builder unmounts, so navigating away
@@ -211,6 +229,7 @@ export function useBuilder(formId: number): UseBuilderResult {
   /** Sends immediately and surfaces the 409 when a type is locked by answers. */
   const changeType = useCallback(
     async (id: number, type: QuestionType) => {
+      markEdited();
       if (!form) return;
       const question = form.questions.find((item) => item.id === id);
       if (!question || question.type === type) return;
@@ -247,11 +266,12 @@ export function useBuilder(formId: number): UseBuilderResult {
         throw cause;
       }
     },
-    [form],
+    [form, markEdited],
   );
 
   const addQuestion = useCallback(
     async (type: QuestionType) => {
+      markEdited();
       if (!form) return;
       setSaveState("saving");
       try {
@@ -266,7 +286,7 @@ export function useBuilder(formId: number): UseBuilderResult {
         throw cause;
       }
     },
-    [form],
+    [form, markEdited],
   );
 
   /**
@@ -279,6 +299,7 @@ export function useBuilder(formId: number): UseBuilderResult {
    */
   const importQuestions = useCallback(
     async (titles: string[]) => {
+      markEdited();
       if (!form || titles.length === 0) return 0;
 
       setSaveState("saving");
@@ -298,11 +319,12 @@ export function useBuilder(formId: number): UseBuilderResult {
         throw cause;
       }
     },
-    [form],
+    [form, markEdited],
   );
 
   const duplicateQuestion = useCallback(
     async (id: number) => {
+      markEdited();
       if (!form) return;
       const source = form.questions.find((item) => item.id === id);
       if (!source) return;
@@ -327,11 +349,12 @@ export function useBuilder(formId: number): UseBuilderResult {
         throw cause;
       }
     },
-    [form],
+    [form, markEdited],
   );
 
   const deleteQuestion = useCallback(
     async (id: number) => {
+      markEdited();
       if (!form) return;
       // Drop any queued autosave for a question that is about to stop existing.
       const timer = timers.current.get(`q:${id}`);
@@ -360,11 +383,12 @@ export function useBuilder(formId: number): UseBuilderResult {
         throw cause;
       }
     },
-    [form],
+    [form, markEdited],
   );
 
   const reorder = useCallback(
     async (ids: number[]) => {
+      markEdited();
       if (!form) return;
       const byId = new Map(form.questions.map((question) => [question.id, question]));
       const optimistic = ids
@@ -388,7 +412,7 @@ export function useBuilder(formId: number): UseBuilderResult {
         throw cause;
       }
     },
-    [form],
+    [form, markEdited],
   );
 
   const setPublished = useCallback(

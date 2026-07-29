@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, String, Text
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -37,6 +37,16 @@ class Form(Base):
         index=True,
     )
     published_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=None)
+
+    # Set when a live form is edited, cleared when those edits are published.
+    #
+    # Tracked explicitly rather than derived from ``updated_at > published_at``:
+    # publishing writes to the form row too, so its own update would bump
+    # ``updated_at`` past ``published_at`` by microseconds and the flag would come
+    # straight back on. A boolean has no such race.
+    has_unpublished_edits: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=text("0"), nullable=False
+    )
 
     # Welcome screen (shown before the first question).
     #
@@ -77,6 +87,15 @@ class Form(Base):
     @property
     def is_published(self) -> bool:
         return self.status is FormStatus.PUBLISHED
+
+    def mark_edited(self) -> None:
+        """Record that the live version is now behind the builder.
+
+        A no-op on a draft: an unpublished form has nothing live to be behind, and
+        flagging one would light up "Publish edits" before it was ever published.
+        """
+        if self.is_published:
+            self.has_unpublished_edits = True
 
     def __repr__(self) -> str:
         return f"<Form id={self.id} slug={self.slug!r} status={self.status.value}>"

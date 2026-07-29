@@ -16,7 +16,17 @@ import type { FormSummary } from "@/lib/types";
  * their values. Defining it twice is how those drift apart.
  */
 export const COLUMN_TEMPLATE =
-  "grid grid-cols-[minmax(0,1fr)_96px_104px_120px_112px_40px] items-center gap-3";
+  "grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1fr)_96px_104px_120px_112px_40px] items-center gap-3";
+
+/**
+ * Columns that only appear once there is room for them.
+ *
+ * Responses, Completed, Updated and Integrations are secondary to knowing which
+ * form a row is: at 375px the six-column template left the title about 40px wide.
+ * The row menu stays at every width, since deleting and duplicating are the
+ * actions people actually reach for.
+ */
+const SECONDARY_CELL = "hidden md:block";
 
 interface FormRowProps {
   form: FormSummary;
@@ -77,17 +87,22 @@ export function FormRow({
         )}
       </div>
 
-      <Cell>{formatCount(form.response_count)}</Cell>
-      <Cell>{formatCount(form.response_count)}</Cell>
+      <Cell className={SECONDARY_CELL}>{formatCount(form.response_count)}</Cell>
+      <Cell className={SECONDARY_CELL}>{formatCount(form.response_count)}</Cell>
 
-      <span className="text-[14px] text-link">{formatDate(form.updated_at)}</span>
+      <span className={cn("text-[14px] text-link", SECONDARY_CELL)}>
+        {formatDate(form.updated_at)}
+      </span>
 
       <button
         type="button"
         aria-label="Integrations"
         title="Integrations"
         onClick={() => onPlaceholder("Integrations")}
-        className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] border border-line text-ink-soft transition-colors hover:bg-hover hover:text-ink"
+        className={cn(
+          "h-8 w-8 items-center justify-center rounded-[var(--radius-control)] border border-line text-ink-soft transition-colors hover:bg-hover hover:text-ink",
+          "hidden md:flex",
+        )}
       >
         <Puzzle size={17} />
       </button>
@@ -97,8 +112,8 @@ export function FormRow({
   );
 }
 
-function Cell({ children }: { children: React.ReactNode }) {
-  return <span className="text-[14px] text-ink-soft">{children}</span>;
+function Cell({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <span className={cn("text-[14px] text-ink-soft", className)}>{children}</span>;
 }
 
 /** Inline title editor: commits on Enter or blur, abandons on Escape. */

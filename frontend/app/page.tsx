@@ -33,6 +33,8 @@ export default function DashboardPage() {
   const [sort, setSort] = useState<SortKey>("created");
   const [view, setView] = useState<ViewMode>("list");
 
+  /** Drawer state for the sidebar below lg; ignored at wider widths. */
+  const [navOpen, setNavOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [renamingId, setRenamingId] = useState<number | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<FormSummary | null>(null);
@@ -180,10 +182,13 @@ export default function DashboardPage() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      <TopBar creator={creator} />
+      <TopBar creator={creator} onToggleNav={() => setNavOpen((open) => !open)} />
       <NavTabs />
 
-      <div className="flex min-h-0 flex-1">
+      <div className="relative flex min-h-0 flex-1">
+        {/* Below lg the rail is a drawer: at 375px a fixed 256px column leaves
+            ~119px for the list, which is not a narrow layout so much as no
+            layout. Static from lg up, where it fits alongside. */}
         <Sidebar
           search={search}
           onSearchChange={setSearch}
@@ -192,10 +197,21 @@ export default function DashboardPage() {
           creating={creating}
           onCreateForm={handleCreate}
           onPlaceholder={setPlaceholder}
+          open={navOpen}
+          onClose={() => setNavOpen(false)}
         />
 
+        {navOpen && (
+          <button
+            type="button"
+            aria-label="Close the menu"
+            onClick={() => setNavOpen(false)}
+            className="fixed inset-0 z-30 bg-[#1a1822]/40 lg:hidden"
+          />
+        )}
+
         <main className="scrollbar-slim min-w-0 flex-1 overflow-y-auto bg-workspace">
-          <div className="mx-auto w-full max-w-[1090px] px-14 pt-14 pb-12">
+          <div className="mx-auto w-full max-w-[1090px] px-4 pt-8 pb-12 sm:px-8 sm:pt-10 lg:px-14 lg:pt-14">
             <WorkspaceHeader
               sort={sort}
               onSortChange={setSort}
@@ -208,7 +224,10 @@ export default function DashboardPage() {
             <div className="mt-7 border-b border-line" />
 
             {showColumnHeadings ? (
-              <div className={cn(COLUMN_TEMPLATE, "px-4 pt-16 pb-3")} aria-hidden="true">
+              <div
+                className={cn(COLUMN_TEMPLATE, "px-4 pt-10 pb-3 md:pt-16")}
+                aria-hidden="true"
+              >
                 <span />
                 <ColumnHeading>Responses</ColumnHeading>
                 <ColumnHeading>Completed</ColumnHeading>
@@ -287,6 +306,11 @@ export default function DashboardPage() {
   );
 }
 
+/**
+ * Hidden below md to stay in step with the row cells it labels — see
+ * SECONDARY_CELL in FormRow. A heading whose column has collapsed is worse than
+ * no heading: it shifts every remaining label one column left.
+ */
 function ColumnHeading({ children }: { children: React.ReactNode }) {
-  return <span className="text-[14px] text-ink-soft">{children}</span>;
+  return <span className="hidden text-[14px] text-ink-soft md:block">{children}</span>;
 }

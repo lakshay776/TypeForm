@@ -45,6 +45,8 @@ interface FormTopBarProps {
   /** Only the builder autosaves, so the indicator is optional. */
   saveState?: SaveState;
   onRename?: (title: string) => void;
+  /** Publishes edits made to an already-live form. Builder only. */
+  onPublishEdits?: () => Promise<void>;
   onPlaceholder: (feature: string) => void;
 }
 
@@ -60,6 +62,7 @@ export function FormTopBar({
   active,
   saveState,
   onRename,
+  onPublishEdits,
   onPlaceholder,
 }: FormTopBarProps) {
   const router = useRouter();
@@ -87,9 +90,16 @@ export function FormTopBar({
     (tab) => published || !PUBLISHED_ONLY.has(tab.id) || tab.id === active,
   );
 
+  // Two rows below lg, one from lg up.
+  //
+  // The tabs are absolutely centred so they stay put as the form title grows, but
+  // an absolutely positioned element cannot also be narrow — at 375px it ran
+  // straight off the right edge. Below lg it drops to its own scrollable row,
+  // which is the only way five tabs and the actions coexist.
   return (
-    <header className="relative flex h-[58px] shrink-0 items-center justify-between gap-4 border-b border-line bg-canvas px-5">
-      <div className="flex min-w-0 items-center gap-2">
+    <header className="relative flex shrink-0 flex-col border-b border-line bg-canvas lg:h-[56px] lg:flex-row lg:items-center lg:gap-4">
+      <div className="flex h-[56px] min-w-0 flex-1 items-center justify-between gap-2 px-3 sm:px-5">
+        <div className="flex min-w-0 items-center gap-2">
         <Link
           href="/"
           className="flex shrink-0 items-center gap-2 rounded-[var(--radius-control)] px-2 py-1.5 text-[14.5px] text-ink transition-colors hover:bg-hover"
@@ -134,31 +144,13 @@ export function FormTopBar({
         {saveState && <SaveIndicator state={saveState} />}
       </div>
 
-      {/* Centred independently of the flanking groups so the tabs stay put as the
-          form title grows. */}
-      <nav
-        className="absolute left-1/2 flex -translate-x-1/2 items-center gap-1"
-        aria-label="Form sections"
-      >
-        {visibleTabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => select(tab)}
-            aria-current={tab.id === active ? "page" : undefined}
-            className={cn(
-              "rounded-[var(--radius-control)] px-3.5 py-2 text-[15px] transition-colors",
-              tab.id === active
-                ? "bg-hover font-medium text-ink"
-                : "text-ink-soft hover:text-ink",
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </nav>
-
       <div className="flex shrink-0 items-center gap-2">
+        {/* Edits to a live form are published from here, so the creator never has
+            to leave the builder to make them count. */}
+        {form.has_unpublished_edits && onPublishEdits && (
+          <PublishEditsButton onPublish={onPublishEdits} />
+        )}
+
         {/*
          * Once a form is live there is nothing left to "share" — the useful action
          * is grabbing the link — so the button becomes a copy control. Before that
@@ -198,7 +190,66 @@ export function FormTopBar({
           <HelpCircle size={21} />
         </button>
       </div>
+      </div>
+
+      <nav
+        className={cn(
+          "scrollbar-slim flex items-center gap-1 overflow-x-auto overflow-y-hidden",
+          "border-t border-line px-3 py-1.5 whitespace-nowrap",
+          "lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:border-t-0 lg:px-0 lg:py-0",
+        )}
+        aria-label="Form sections"
+      >
+        {visibleTabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => select(tab)}
+            aria-current={tab.id === active ? "page" : undefined}
+            className={cn(
+              "rounded-[var(--radius-control)] px-3.5 py-2 text-[15px] transition-colors",
+              tab.id === active
+                ? "bg-hover font-medium text-ink"
+                : "text-ink-soft hover:text-ink",
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </nav>
     </header>
+  );
+}
+
+/**
+ * Pushes edits made to a live form.
+ *
+ * Shown only while `has_unpublished_edits` is set, so it appears when there is
+ * something to publish and disappears once there isn't — the button's presence is
+ * the "you have unsaved changes" signal, which is why there is no separate badge.
+ */
+function PublishEditsButton({ onPublish }: { onPublish: () => Promise<void> }) {
+  const [busy, setBusy] = useState(false);
+
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={async () => {
+        setBusy(true);
+        try {
+          await onPublish();
+        } finally {
+          // The button unmounts on success, so this only matters on failure —
+          // where leaving it spinning forever would strand the creator.
+          setBusy(false);
+        }
+      }}
+      className="flex h-9 items-center gap-2 rounded-[var(--radius-control)] border border-line bg-canvas px-3.5 text-sm font-medium text-ink transition-colors hover:bg-hover disabled:cursor-wait disabled:opacity-70"
+    >
+      {busy ? <Spinner className="h-4 w-4 border" /> : <ShareArrow size={17} />}
+      Publish edits
+    </button>
   );
 }
 

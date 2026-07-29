@@ -18,7 +18,7 @@ import { AlertCircle, Plus } from "@/components/ui/Icons";
 import { ComingSoonModal, ConfirmModal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import { useBuilder } from "@/hooks/useBuilder";
-import { ApiError } from "@/lib/api";
+import { ApiError, publishProblems } from "@/lib/api";
 import { cn } from "@/lib/format";
 import type { QuestionType } from "@/lib/types";
 
@@ -41,8 +41,29 @@ export function Builder({ formId, isNew = false }: { formId: number; isNew?: boo
     duplicateQuestion,
     reorder,
     patchForm,
+    setPublished,
     reload,
   } = builder;
+
+  /**
+   * Publishes edits to an already-live form.
+   *
+   * Awaited rather than fired and forgotten so the button can stay busy until the
+   * server has actually accepted it — and so a rejection surfaces instead of the
+   * button quietly vanishing as though it had worked.
+   */
+  const handlePublishEdits = async () => {
+    try {
+      await setPublished(true);
+      success("Edits published");
+    } catch (cause) {
+      const blockers = publishProblems(cause);
+      errorToast(
+        blockers[0] ??
+          (cause instanceof ApiError ? cause.message : "Couldn't publish those edits."),
+      );
+    }
+  };
 
   const [device, setDevice] = useState<DeviceMode>("desktop");
   // Seeded from the prop rather than opened in an effect, so a brand-new form
@@ -176,10 +197,15 @@ export function Builder({ formId, isNew = false }: { formId: number; isNew?: boo
         active="content"
         saveState={saveState}
         onRename={(title) => patchForm({ title })}
+        onPublishEdits={handlePublishEdits}
         onPlaceholder={setPlaceholder}
       />
 
-      <div className="flex min-h-0 flex-1">
+      {/* Stacked below lg, three columns from lg up.
+          Three fixed-ish columns need roughly 900px before the canvas has any
+          room left; below that the pages list, canvas and settings become
+          sections of one scrolling page instead. */}
+      <div className="scrollbar-slim flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
         <PagesPanel
           questions={form.questions}
           selection={selection}
@@ -193,7 +219,9 @@ export function Builder({ formId, isNew = false }: { formId: number; isNew?: boo
           onPlaceholder={setPlaceholder}
         />
 
-        <main className="flex min-w-0 flex-1 flex-col gap-3 py-4 pr-2">
+        {/* min-h below lg because the parent scrolls there, so flex-1 has no
+            height to divide and the canvas would collapse to its content. */}
+        <main className="flex min-h-[460px] min-w-0 flex-1 flex-col gap-3 px-4 py-4 lg:min-h-0 lg:px-0 lg:pr-2">
           <CanvasToolbar
             device={device}
             onDeviceChange={setDevice}

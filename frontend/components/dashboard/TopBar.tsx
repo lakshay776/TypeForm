@@ -8,6 +8,7 @@ import {
   ChevronDown,
   HelpCircle,
   LogoMark,
+  Menu,
   Palette,
   Puzzle,
 } from "@/components/ui/Icons";
@@ -28,14 +29,32 @@ function handle(creator: Creator | null): string {
   return creator ? creator.email.split("@")[0] : "…";
 }
 
-export function TopBar({ creator }: { creator: Creator | null }) {
+export function TopBar({
+  creator,
+  onToggleNav,
+}: {
+  creator: Creator | null;
+  /** Opens the sidebar drawer. Only rendered below lg, where the rail is hidden. */
+  onToggleNav?: () => void;
+}) {
   const [placeholder, setPlaceholder] = useState<string | null>(null);
 
   return (
     <>
-      <header className="flex h-[52px] shrink-0 items-center justify-between gap-4 bg-canvas px-5">
-        <div className="flex items-center gap-2.5">
-          <LogoMark size={30} />
+      <header className="flex h-[56px] shrink-0 items-center justify-between gap-2 bg-canvas px-3 sm:gap-4 sm:px-5">
+        <div className="flex min-w-0 items-center gap-2.5">
+          {onToggleNav && (
+            <button
+              type="button"
+              aria-label="Open the menu"
+              onClick={onToggleNav}
+              className="-ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-control)] text-ink-soft transition-colors hover:bg-hover hover:text-ink lg:hidden"
+            >
+              <Menu size={20} />
+            </button>
+          )}
+
+          <LogoMark size={30} className="shrink-0 text-ink" />
 
           <Dropdown
             align="start"
@@ -93,21 +112,26 @@ export function TopBar({ creator }: { creator: Creator | null }) {
           </Dropdown>
         </div>
 
-        <div className="flex items-center gap-1">
-          <TopBarLink
-            icon={<Puzzle size={19} />}
-            label="Integrations"
-            onClick={() => setPlaceholder("Integrations")}
-          />
-          <TopBarLink
-            icon={<Palette size={19} />}
-            label="Brand kit"
-            onClick={() => setPlaceholder("Brand kit")}
-          />
+        {/* Everything here is a placeholder except the avatar, so the narrow
+            layout drops them in order of least use rather than trying to squeeze
+            all five onto a phone. */}
+        <div className="flex shrink-0 items-center gap-1">
+          <span className="hidden lg:flex lg:items-center lg:gap-1">
+            <TopBarLink
+              icon={<Puzzle size={19} />}
+              label="Integrations"
+              onClick={() => setPlaceholder("Integrations")}
+            />
+            <TopBarLink
+              icon={<Palette size={19} />}
+              label="Brand kit"
+              onClick={() => setPlaceholder("Brand kit")}
+            />
+          </span>
 
           <Button
             variant="evergreen"
-            className="ml-2 h-8 px-3.5 text-[13.5px] font-semibold"
+            className="ml-2 hidden h-8 px-3.5 text-[13.5px] font-semibold sm:flex"
             onClick={() => setPlaceholder("Plans and billing")}
           >
             View plans
@@ -118,7 +142,7 @@ export function TopBar({ creator }: { creator: Creator | null }) {
             aria-label="Help"
             title="Help"
             onClick={() => setPlaceholder("Help centre")}
-            className="ml-1.5 flex h-8 w-8 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-hover hover:text-ink"
+            className="ml-1.5 hidden h-8 w-8 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-hover hover:text-ink sm:flex"
           >
             <HelpCircle size={19} />
           </button>

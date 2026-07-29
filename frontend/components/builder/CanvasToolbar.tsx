@@ -25,7 +25,7 @@ export function CanvasToolbar({
   designOpen,
 }: CanvasToolbarProps) {
   return (
-    <div className="flex shrink-0 items-center gap-1.5 rounded-[10px] border border-line bg-canvas px-2 py-2">
+    <div className="scrollbar-slim flex shrink-0 items-center gap-1.5 overflow-x-auto rounded-[10px] border border-line bg-canvas px-2 py-2">
       <button
         type="button"
         onClick={onAddContent}

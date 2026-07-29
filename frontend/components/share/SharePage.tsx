@@ -130,7 +130,7 @@ export function SharePage({
       <FormTopBar form={form} active="share" onPlaceholder={setPlaceholder} />
 
       <main className="scrollbar-slim flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-[840px] px-6 py-14">
+        <div className="mx-auto w-full max-w-[840px] px-4 py-8 sm:px-6 sm:py-14">
           <h1 className="text-center text-[30px] leading-tight font-semibold tracking-[-0.02em] text-ink">
             Choose how you’d like to share your form
           </h1>

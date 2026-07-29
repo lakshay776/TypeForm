@@ -5,7 +5,7 @@ import { useState } from "react";
 import { AskAI } from "@/components/dashboard/AskAI";
 import { ResponseMeter } from "@/components/dashboard/ResponseMeter";
 import { Button, Spinner } from "@/components/ui/Button";
-import { ChevronUp, Grid2, Plus, Search } from "@/components/ui/Icons";
+import { ChevronUp, Close, Grid2, Plus, Search } from "@/components/ui/Icons";
 import { cn } from "@/lib/format";
 
 interface SidebarProps {
@@ -16,6 +16,9 @@ interface SidebarProps {
   creating: boolean;
   onCreateForm: () => void;
   onPlaceholder: (feature: string) => void;
+  /** Drawer state, used below lg only. */
+  open?: boolean;
+  onClose?: () => void;
 }
 
 export function Sidebar({
@@ -26,16 +29,43 @@ export function Sidebar({
   creating,
   onCreateForm,
   onPlaceholder,
+  open = false,
+  onClose,
 }: SidebarProps) {
   const [privateOpen, setPrivateOpen] = useState(true);
 
   return (
-    <aside className="flex w-[var(--spacing-sidebar)] shrink-0 flex-col border-r border-line bg-sidebar">
-      <div className="px-5 pt-7 pb-5">
+    <aside
+      className={cn(
+        "flex w-[var(--spacing-sidebar)] shrink-0 flex-col border-r border-line bg-sidebar",
+        // Off-canvas below lg, in the flow from lg up. Translated rather than
+        // unmounted so the search box keeps its value across open and close.
+        "fixed inset-y-0 left-0 z-40 transition-transform duration-200 lg:static lg:z-auto lg:translate-x-0",
+        open ? "translate-x-0 shadow-[0_0_40px_-8px_rgba(24,22,30,0.35)]" : "-translate-x-full",
+      )}
+    >
+      {/* Only the drawer needs dismissing; from lg up the rail is just there. */}
+      <div className="flex justify-end px-3 pt-3 lg:hidden">
+        <button
+          type="button"
+          aria-label="Close the menu"
+          onClick={onClose}
+          className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-ink-soft transition-colors hover:bg-hover hover:text-ink"
+        >
+          <Close size={19} />
+        </button>
+      </div>
+
+      <div className="px-5 pt-4 pb-5 lg:pt-7">
         <Button
           variant="primary"
           size="md"
-          onClick={onCreateForm}
+          onClick={() => {
+            // Closes the drawer as it navigates, or the new builder would open
+            // behind it on a phone.
+            onClose?.();
+            onCreateForm();
+          }}
           disabled={creating}
           className="w-full font-semibold"
         >

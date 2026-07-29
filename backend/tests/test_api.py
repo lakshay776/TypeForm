@@ -219,6 +219,46 @@ def test_publish_exposes_public_url_and_unpublish_hides_it(client):
     assert client.get(f"{API}/public/forms/{published['slug']}").status_code == 404
 
 
+def test_editing_a_live_form_flags_unpublished_edits(client):
+    form = _create_form(client)
+    question = _add_question(client, form["id"], type="short_text", title="Hi")
+
+    published = client.post(f"{API}/forms/{form['id']}/publish").json()
+    assert published["has_unpublished_edits"] is False
+
+    # Editing a question is an edit to the live form.
+    client.put(
+        f"{API}/forms/{form['id']}/questions/{question['id']}",
+        json={"type": "short_text", "title": "Hi again", "options": []},
+    )
+    assert client.get(f"{API}/forms/{form['id']}").json()["has_unpublished_edits"] is True
+
+    # Publishing again is what clears it — this is the "Publish edits" action.
+    republished = client.post(f"{API}/forms/{form['id']}/publish").json()
+    assert republished["has_unpublished_edits"] is False
+
+    # Form-level edits count too.
+    client.patch(f"{API}/forms/{form['id']}", json={"title": "Renamed"})
+    assert client.get(f"{API}/forms/{form['id']}").json()["has_unpublished_edits"] is True
+
+
+def test_a_draft_is_never_flagged_as_having_unpublished_edits(client):
+    """A form that was never live has nothing to be behind."""
+    form = _create_form(client)
+    _add_question(client, form["id"], type="short_text", title="Hi")
+    client.patch(f"{API}/forms/{form['id']}", json={"title": "Still a draft"})
+
+    assert client.get(f"{API}/forms/{form['id']}").json()["has_unpublished_edits"] is False
+
+    # Unpublishing also clears it, so republishing later doesn't start out dirty.
+    client.post(f"{API}/forms/{form['id']}/publish")
+    client.patch(f"{API}/forms/{form['id']}", json={"title": "Edited while live"})
+    assert client.get(f"{API}/forms/{form['id']}").json()["has_unpublished_edits"] is True
+
+    unpublished = client.post(f"{API}/forms/{form['id']}/unpublish").json()
+    assert unpublished["has_unpublished_edits"] is False
+
+
 def test_an_empty_form_cannot_be_published(client):
     form = _create_form(client, "Half-built")
 

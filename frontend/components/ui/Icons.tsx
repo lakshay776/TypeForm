@@ -288,6 +288,13 @@ export const BarChart = (p: IconProps) => (
   </Svg>
 );
 
+/** Hamburger — opens the sidebar drawer on narrow screens. */
+export const Menu = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M4 7h16M4 12h16M4 17h16" />
+  </Svg>
+);
+
 /** Phone outline — toggles the preview between desktop and mobile widths. */
 export const Mobile = (p: IconProps) => (
   <Svg {...p}>

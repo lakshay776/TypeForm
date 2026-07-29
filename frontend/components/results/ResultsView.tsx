@@ -110,7 +110,7 @@ export function ResultsView({ form }: { form: FormDetail }) {
       <FormTopBar form={form} active="results" onPlaceholder={setPlaceholder} />
 
       <nav
-        className="flex shrink-0 items-end gap-1 border-b border-line bg-canvas px-6"
+        className="scrollbar-slim flex shrink-0 items-end gap-1 overflow-x-auto border-b border-line bg-canvas px-4 whitespace-nowrap sm:px-6"
         aria-label="Results sections"
       >
         <SubTab active={tab === "summary"} onClick={() => setTab("summary")}>

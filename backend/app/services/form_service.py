@@ -75,6 +75,7 @@ def to_summary(form: Form, *, question_count: int, response_count: int) -> FormS
         question_count=question_count,
         response_count=response_count,
         public_url=public_url(form),
+        has_unpublished_edits=form.has_unpublished_edits,
     )
 
 
@@ -216,6 +217,7 @@ def update_form(db: Session, form: Form, payload: FormUpdate) -> Form:
             if value is not None:
                 setattr(theme, field, value)
 
+    form.mark_edited()
     db.commit()
     db.refresh(form)
     return form
@@ -326,8 +328,14 @@ def set_published(db: Session, form: Form, published: bool) -> Form:
         # Stamped only on first publish so the dashboard can show when a form
         # originally went live, not when it was last toggled.
         form.published_at = form.published_at or utcnow()
+        # Publishing is what clears the flag — this is the same call that backs
+        # "Publish edits" on an already-live form.
+        form.has_unpublished_edits = False
     else:
         form.status = FormStatus.DRAFT
+        # Nothing is live to be behind any more, so the flag would be meaningless
+        # and would resurface the moment the form was published again.
+        form.has_unpublished_edits = False
     db.commit()
     db.refresh(form)
     return form

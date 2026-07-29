@@ -28,7 +28,7 @@ export function SettingsPanel({
   onPlaceholder,
 }: SettingsPanelProps) {
   return (
-    <aside className="scrollbar-slim flex w-[320px] shrink-0 flex-col gap-3 overflow-y-auto bg-sidebar p-5 pt-4">
+    <aside className="scrollbar-slim flex w-full shrink-0 flex-col gap-3 overflow-y-auto border-t border-line bg-sidebar p-4 lg:w-[320px] lg:border-t-0 lg:p-5 lg:pt-4">
       {screen ? (
         <ScreenSettings form={form} screen={screen} onPatchForm={onPatchForm} />
       ) : question ? (

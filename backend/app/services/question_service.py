@@ -112,6 +112,7 @@ def create_question(db: Session, form: Form, payload: QuestionCreate) -> Questio
     if payload.type in CHOICE_TYPES:
         _sync_options(db, question, payload.options)
 
+    form.mark_edited()
     db.commit()
     db.refresh(question)
     return question
@@ -146,6 +147,7 @@ def create_questions(db: Session, form: Form, payloads: list[QuestionCreate]) ->
         if question.type in CHOICE_TYPES:
             _sync_options(db, question, payload.options)
 
+    form.mark_edited()
     db.commit()
     for question in created:
         db.refresh(question)
@@ -179,6 +181,7 @@ def update_question(db: Session, question: Question, payload: QuestionUpdate) ->
         for option in list(question.options):
             db.delete(option)
 
+    question.form.mark_edited()
     db.commit()
     db.refresh(question)
     return question
@@ -186,6 +189,7 @@ def update_question(db: Session, question: Question, payload: QuestionUpdate) ->
 
 def delete_question(db: Session, question: Question) -> None:
     form_id = question.form_id
+    question.form.mark_edited()
     db.delete(question)
     db.flush()
     _renumber(_ordered_questions(db, form_id))
@@ -207,5 +211,6 @@ def reorder_questions(db: Session, form: Form, question_ids: list[int]) -> list[
         )
 
     _renumber([questions[question_id] for question_id in question_ids])
+    form.mark_edited()
     db.commit()
     return _ordered_questions(db, form.id)

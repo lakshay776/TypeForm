@@ -73,7 +73,7 @@ export function PagesPanel({
   };
 
   return (
-    <aside className="flex w-[var(--spacing-sidebar)] shrink-0 flex-col gap-3 overflow-hidden bg-sidebar p-5 pt-4">
+    <aside className="flex w-full shrink-0 flex-col gap-3 overflow-hidden border-b border-line bg-sidebar p-4 lg:w-[var(--spacing-sidebar)] lg:border-b-0 lg:p-5 lg:pt-4">
       <button
         type="button"
         onClick={() => onPlaceholder("Universal mode")}

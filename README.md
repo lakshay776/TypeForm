@@ -4,7 +4,17 @@ A functional clone of Typeform: a drag-and-drop form builder, publishable sharea
 links, the signature one-question-at-a-time respondent experience, and a results
 view with per-question summary statistics.
 
-> **Status:** all core features complete and tested. Remaining: deployment.
+## Live demo
+
+| | |
+|---|---|
+| **App** | https://type-form-lakshay.vercel.app |
+| API | https://typeform-production-bd2b.up.railway.app |
+| API docs | https://typeform-production-bd2b.up.railway.app/docs |
+
+The app opens on the dashboard with three seeded forms, one of which already has
+responses — so the builder, the respondent flow and the results view all have data to
+show without setting anything up. Filling in a form needs no account.
 
 ## Tech stack
 

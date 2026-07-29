@@ -23,7 +23,7 @@ export function ResponseMeter({
   const percentage = Math.min((used / RESPONSE_LIMIT) * 100, 100);
 
   return (
-    <div className="border-t border-line px-5 py-4">
+    <div className="border-t-[6px] border-canvas px-5 py-4">
       <p className="text-[14px] text-ink">Responses collected</p>
 
       <div

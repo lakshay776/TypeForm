@@ -47,7 +47,7 @@ export function NavTabs() {
       <nav
         // Scrolls sideways rather than wrapping or clipping: four tabs plus a
         // badge do not fit at 375px, and a second row would push the list down.
-        className="scrollbar-slim flex h-[46px] shrink-0 items-end gap-1 overflow-x-auto overflow-y-hidden border-b border-line px-3 whitespace-nowrap sm:px-5"
+        className="scrollbar-slim flex h-[46px] shrink-0 items-end gap-1 overflow-x-auto overflow-y-hidden border-b border-line bg-workspace px-3 whitespace-nowrap sm:px-5"
         aria-label="Sections"
       >
         {TABS.map((tab) => (

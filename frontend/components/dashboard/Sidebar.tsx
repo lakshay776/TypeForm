@@ -37,7 +37,7 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "flex w-[var(--spacing-sidebar)] shrink-0 flex-col border-r border-line bg-sidebar",
+        "flex w-[var(--spacing-sidebar)] shrink-0 flex-col border-r border-line bg-workspace",
         // Off-canvas below lg, in the flow from lg up. Translated rather than
         // unmounted so the search box keeps its value across open and close.
         "fixed inset-y-0 left-0 z-40 transition-transform duration-200 lg:static lg:z-auto lg:translate-x-0",
@@ -93,7 +93,9 @@ export function Sidebar({
         </label>
       </div>
 
-      <div className="mx-5 h-px bg-line" />
+      {/* A white band, not a grey hairline: with the rail itself on #F7F7F8 the
+          separation reads as a gap between groups rather than a drawn rule. */}
+      <div className="h-1.5 shrink-0 bg-canvas" />
 
       <div className="flex items-center justify-between px-5 pt-5 pb-1.5">
         <span className="flex items-center gap-2.5 text-[15px] text-ink">

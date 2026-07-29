@@ -1,0 +1,14 @@
+<!--
+  Browser-tab icon. Next.js picks this up from app/icon.svg and emits the <link>
+  itself, so nothing references it by hand.
+
+  Proportions are taken from the supplied mark: the bar is 19.8% of the logo's
+  width, the gap 11.5%, the square 68.7%, and the whole thing 67.9% as tall as it
+  is wide. The mark is set a little tighter in the frame than the source image —
+  at a 16px tab size, generous padding just reads as a smaller logo.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" fill="#F7F7F5" />
+  <rect x="4" y="7.85" width="4.76" height="16.3" rx="2.38" fill="#1A1A1A" />
+  <rect x="11.52" y="7.85" width="16.49" height="16.3" rx="3.67" fill="#1A1A1A" />
+</svg>

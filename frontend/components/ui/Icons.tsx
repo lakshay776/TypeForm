@@ -28,17 +28,26 @@ function Svg({ size = 20, children, ...props }: IconProps) {
   );
 }
 
-/** The Typeform wordmark's "T" block. */
-export function LogoMark({ size = 28 }: { size?: number }) {
+/**
+ * The Typeform mark: a narrow rounded bar beside a rounded square.
+ *
+ * Proportions match `app/icon.svg`, so the tab icon and the header logo are the
+ * same shape. Drawn in `currentColor` rather than a fixed hex — unlike the
+ * favicon this sits on the app's own surfaces, so it should follow the
+ * surrounding text colour instead of pinning one that may not suit them.
+ */
+export function LogoMark({ size = 28, className }: { size?: number; className?: string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" aria-label="Typeform" role="img">
-      <rect width="32" height="32" rx="9" fill="#262627" />
-      <path
-        d="M9 11.2h14M16 11.2V21.5"
-        stroke="#fff"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-      />
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 32 32"
+      className={className ?? "text-ink"}
+      aria-label="Typeform"
+      role="img"
+    >
+      <rect x="3" y="7.17" width="5.16" height="17.65" rx="2.58" fill="currentColor" />
+      <rect x="11.15" y="7.17" width="17.86" height="17.65" rx="3.97" fill="currentColor" />
     </svg>
   );
 }

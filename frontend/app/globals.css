@@ -11,6 +11,8 @@
   /* Surfaces */
   --color-canvas: #ffffff;
   --color-sidebar: #f5f4f6;
+  /* The workspace surface the form list sits on — rows are white cards on top. */
+  --color-workspace: #f7f7f8;
   --color-hover: #edecef;
   --color-selected: #e6e5ea;
 

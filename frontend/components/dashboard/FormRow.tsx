@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { FormActions, FormActionsMenu, StatusPill } from "@/components/dashboard/FormActionsMenu";
 import { Puzzle } from "@/components/ui/Icons";
-import { cn, formatCount, formatDate, thumbnailGradient } from "@/lib/format";
+import { FORM_THUMBNAIL, cn, formatCount, formatDate } from "@/lib/format";
 import type { FormSummary } from "@/lib/types";
 
 /**
@@ -46,14 +46,14 @@ export function FormRow({
       transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
         COLUMN_TEMPLATE,
-        "group rounded-[var(--radius-card)] border border-line bg-canvas px-4 py-2",
+        "group rounded-[var(--radius-card)] border border-line bg-canvas px-4 py-1.5",
         "transition-shadow duration-150 hover:shadow-[0_2px_10px_-2px_rgba(24,22,30,0.09)]",
       )}
     >
-      <div className="flex min-w-0 items-center gap-3.5">
+      <div className="flex min-w-0 items-center gap-3">
         <span
-          className="h-10 w-10 shrink-0 rounded-[10px]"
-          style={{ background: thumbnailGradient(form.id) }}
+          className="h-8 w-8 shrink-0 rounded-[8px]"
+          style={{ background: FORM_THUMBNAIL }}
           aria-hidden="true"
         />
 

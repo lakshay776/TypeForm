@@ -3,7 +3,7 @@
 import { motion } from "motion/react";
 
 import { FormActions, FormActionsMenu, StatusPill } from "@/components/dashboard/FormActionsMenu";
-import { cn, formatDate, pluralize, thumbnailGradient } from "@/lib/format";
+import { FORM_THUMBNAIL, cn, formatDate, pluralize } from "@/lib/format";
 import type { FormSummary } from "@/lib/types";
 
 /** Grid-view tile, behind the List/Grid toggle. */
@@ -33,7 +33,7 @@ export function FormCard({
         onClick={onOpen}
         aria-label={`Open ${form.title}`}
         className="h-[104px] w-full"
-        style={{ background: thumbnailGradient(form.id) }}
+        style={{ background: FORM_THUMBNAIL }}
       />
 
       <div className="flex flex-1 flex-col gap-2 p-3.5">

@@ -194,7 +194,7 @@ export default function DashboardPage() {
           onPlaceholder={setPlaceholder}
         />
 
-        <main className="scrollbar-slim min-w-0 flex-1 overflow-y-auto">
+        <main className="scrollbar-slim min-w-0 flex-1 overflow-y-auto bg-workspace">
           <div className="mx-auto w-full max-w-[1090px] px-14 pt-14 pb-12">
             <WorkspaceHeader
               sort={sort}

@@ -45,7 +45,7 @@ export function NavTabs() {
   return (
     <>
       <nav
-        className="flex h-[52px] shrink-0 items-end gap-1 border-b border-line px-5"
+        className="flex h-[46px] shrink-0 items-end gap-1 border-b border-line px-5"
         aria-label="Sections"
       >
         {TABS.map((tab) => (
@@ -81,7 +81,7 @@ function TabButton({
       onClick={() => onSelect(tab)}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "relative flex items-center gap-2 rounded-t-md px-3 pt-2.5 pb-3.5 text-[14.5px] transition-colors duration-150",
+        "relative flex items-center gap-2 rounded-t-md px-3 pt-2 pb-3 text-[14.5px] transition-colors duration-150",
         active ? "font-medium text-ink" : "text-ink-soft hover:text-ink",
       )}
     >

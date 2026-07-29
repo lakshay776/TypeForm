@@ -33,7 +33,7 @@ export function TopBar({ creator }: { creator: Creator | null }) {
 
   return (
     <>
-      <header className="flex h-[58px] shrink-0 items-center justify-between gap-4 bg-canvas px-5">
+      <header className="flex h-[52px] shrink-0 items-center justify-between gap-4 bg-canvas px-5">
         <div className="flex items-center gap-2.5">
           <LogoMark size={30} />
 
@@ -107,7 +107,7 @@ export function TopBar({ creator }: { creator: Creator | null }) {
 
           <Button
             variant="evergreen"
-            className="ml-2 h-9 px-4 text-[14px] font-semibold"
+            className="ml-2 h-8 px-3.5 text-[13.5px] font-semibold"
             onClick={() => setPlaceholder("Plans and billing")}
           >
             View plans
@@ -118,13 +118,13 @@ export function TopBar({ creator }: { creator: Creator | null }) {
             aria-label="Help"
             title="Help"
             onClick={() => setPlaceholder("Help centre")}
-            className="ml-1.5 flex h-9 w-9 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-hover hover:text-ink"
+            className="ml-1.5 flex h-8 w-8 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-hover hover:text-ink"
           >
-            <HelpCircle size={21} />
+            <HelpCircle size={19} />
           </button>
 
           <span
-            className="ml-1 flex h-8 w-8 items-center justify-center rounded-full text-[12px] font-semibold text-white"
+            className="ml-1 flex h-7 w-7 items-center justify-center rounded-full text-[11.5px] font-semibold text-white"
             style={{ background: "linear-gradient(135deg,#cf8fc4,#b56aae)" }}
             title={creator?.email}
           >

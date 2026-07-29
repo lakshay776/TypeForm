@@ -46,14 +46,11 @@ export function pluralize(count: number, singular: string, plural = `${singular}
   return `${count} ${count === 1 ? singular : plural}`;
 }
 
-/** Deterministic pick from a palette, so a form's thumbnail never changes. */
-export function thumbnailGradient(seed: number): string {
-  const gradients = [
-    "linear-gradient(135deg, #b686d6, #9a67c6)",
-    "linear-gradient(135deg, #f0a3a3, #dd7f8f)",
-    "linear-gradient(135deg, #8fb8e8, #6f95d6)",
-    "linear-gradient(135deg, #94d3bd, #6fb79f)",
-    "linear-gradient(135deg, #f2c58c, #e0a367)",
-  ];
-  return gradients[seed % gradients.length];
-}
+/**
+ * The form thumbnail fill — one purple for every form.
+ *
+ * Previously a per-id pick from a five-colour palette, which made the list look
+ * like the colours meant something. They didn't: a form's status is already shown
+ * by its pill, so the colour was decoration that read as data.
+ */
+export const FORM_THUMBNAIL = "linear-gradient(135deg, #b686d6, #9a67c6)";

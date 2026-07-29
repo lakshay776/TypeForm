@@ -211,7 +211,10 @@ export default function DashboardPage() {
         )}
 
         <main className="scrollbar-slim min-w-0 flex-1 overflow-y-auto bg-workspace">
-          <div className="mx-auto w-full max-w-[1090px] px-4 pt-8 pb-12 sm:px-8 sm:pt-10 lg:px-14 lg:pt-14">
+          {/* No max-width: capping this at 1090px and centring it left a wide gap
+              either side, so the list floated in the middle instead of filling the
+              workspace. Padding alone, matching the reference. */}
+          <div className="w-full px-4 pt-8 pb-12 sm:px-8 sm:pt-10 lg:px-11 lg:pt-14">
             <WorkspaceHeader
               sort={sort}
               onSortChange={setSort}

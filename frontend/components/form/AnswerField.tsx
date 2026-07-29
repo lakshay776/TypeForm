@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
 import { ChoiceOption } from "@/components/form/ChoiceOption";
-import { ChevronDown } from "@/components/ui/Icons";
+import { ChevronDown, Search } from "@/components/ui/Icons";
 import { cn } from "@/lib/format";
 import type { FormTheme, Question } from "@/lib/types";
 
@@ -152,6 +152,8 @@ export function AnswerField({
           onChange={onChange}
           theme={theme}
           disabled={disabled}
+          autoFocus={autoFocus}
+          onSubmit={onSubmit}
         />
       );
 
@@ -217,13 +219,17 @@ export function AnswerField({
 }
 
 /**
- * Themed dropdown.
+ * Themed dropdown — a searchable combobox.
  *
- * A native `<select>` renders its option list through the operating system, so the
- * form's theme cannot reach it — on a dark theme you get a light OS menu, and the
- * A/B/C keys can't be shown at all. This is a listbox built from the same
- * `ChoiceOption` card the other choice types use, so a dropdown and a multiple
- * choice look like the same form.
+ * A native `<select>` renders its list through the operating system, so the form's
+ * theme cannot reach it: on a dark theme you get a light OS menu. This is a
+ * combobox instead, which also gets the type-to-filter behaviour a `<select>`
+ * can't offer — the point of a dropdown over multiple choice is that the list may
+ * be long enough to need searching.
+ *
+ * Unlike the other choice types this deliberately drops the A/B/C key badges.
+ * Those exist so a respondent can pick with one keypress, which stops being true
+ * once the visible list is a filtered subset and the letters no longer line up.
  */
 function DropdownField({
   question,
@@ -231,88 +237,227 @@ function DropdownField({
   onChange,
   theme,
   disabled,
+  autoFocus,
+  onSubmit,
 }: {
   question: Question;
   value: AnswerValue;
   onChange: (value: AnswerValue) => void;
   theme: FormTheme;
   disabled: boolean;
+  autoFocus?: boolean;
+  onSubmit?: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  // -1 so the freshly opened list shows no row as pre-picked. Typing moves it to
+  // the first match, which is what makes Enter select the obvious candidate.
+  const [highlight, setHighlight] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
 
+  const { answer_color: answerColor, button_color: buttonColor } = theme;
   const selectedId = Array.isArray(value) && value.length > 0 ? value[0] : null;
-  const selected = question.options.find((option) => option.id === selectedId);
+  const selected = question.options.find((option) => option.id === selectedId) ?? null;
+
+  const needle = query.trim().toLowerCase();
+  const matches = needle
+    ? question.options.filter((option) => option.label.toLowerCase().includes(needle))
+    : question.options;
+
+  // Clamped on read rather than corrected in an effect: filtering can shrink the
+  // list under a stale index, and an effect that calls setState to fix it would
+  // render one frame with the highlight out of bounds.
+  const activeIndex =
+    matches.length && highlight >= 0 ? Math.min(highlight, matches.length - 1) : -1;
+  const activeOption = activeIndex >= 0 ? matches[activeIndex] : null;
 
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (event: PointerEvent) => {
       if (!containerRef.current?.contains(event.target as Node)) setOpen(false);
     };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        // Stopped so the surrounding flow doesn't also act on Escape.
-        event.stopPropagation();
-        setOpen(false);
-      }
-    };
     document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
+    return () => document.removeEventListener("pointerdown", onPointerDown);
   }, [open]);
 
+  // Keeps the keyboard-highlighted row visible without scrolling the page.
+  useEffect(() => {
+    if (!open || activeIndex < 0) return;
+    listRef.current?.children[activeIndex]?.scrollIntoView({ block: "nearest" });
+  }, [open, activeIndex]);
+
+  const choose = (optionId: number) => {
+    // Always selects rather than toggling: re-picking the row you already chose
+    // should not silently empty a dropdown.
+    onChange([optionId]);
+    setQuery("");
+    setHighlight(-1);
+    setOpen(false);
+  };
+
+  const onKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      if (!open) {
+        setOpen(true);
+        return;
+      }
+      const delta = event.key === "ArrowDown" ? 1 : -1;
+      setHighlight(Math.min(Math.max(activeIndex + delta, 0), Math.max(matches.length - 1, 0)));
+      return;
+    }
+    if (event.key === "Enter") {
+      event.preventDefault();
+      // An open list means Enter is picking an option, not answering the question.
+      if (open && activeOption) {
+        choose(activeOption.id);
+        return;
+      }
+      onSubmit?.();
+      return;
+    }
+    if (event.key === "Escape" && open) {
+      // Marks the key handled so the preview or respondent flow doesn't also act
+      // on it and close itself out from under someone who only meant to shut the
+      // list. preventDefault is what those handlers check — stopPropagation alone
+      // cannot reach a listener attached to the same node. Escape has no default
+      // action worth preserving here.
+      event.preventDefault();
+      event.stopPropagation();
+      setOpen(false);
+    }
+  };
+
+  // The canvas renders a non-interactive stand-in: a closed control with a
+  // chevron, matching how the builder shows every other field type.
+  if (disabled) {
+    return (
+      <div className="w-full max-w-[680px]">
+        <div
+          className="flex w-full items-center gap-3 border-b-[1.5px] pb-2 text-[24px]"
+          style={{ color: answerColor, borderColor: `${answerColor}4d` }}
+        >
+          <span className={cn("min-w-0 flex-1 truncate", !selected && "opacity-55")}>
+            {selected ? selected.label || "Choice" : question.placeholder || "Type or select an option"}
+          </span>
+          <ChevronDown size={22} className="shrink-0" />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div ref={containerRef} className="w-full max-w-[620px]">
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => setOpen((current) => !current)}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-label={question.title || "Your answer"}
-        className="flex w-full items-center gap-3 border-b-[1.5px] bg-transparent pb-2 text-left text-[24px] disabled:cursor-default"
-        style={{ color: theme.answer_color, borderColor: `${theme.answer_color}4d` }}
+    <div ref={containerRef} className="w-full max-w-[680px]">
+      <div
+        className="flex w-full items-center gap-3 border-b-[1.5px] pb-2"
+        style={{ borderColor: `${answerColor}4d` }}
       >
-        <span className={cn("min-w-0 flex-1 truncate", !selected && "opacity-55")}>
-          {selected ? selected.label || "Choice" : question.placeholder || "Select an option"}
-        </span>
-        <ChevronDown
-          size={22}
-          className={cn("shrink-0 transition-transform duration-200", open && "rotate-180")}
+        <input
+          type="text"
+          role="combobox"
+          aria-expanded={open}
+          aria-controls={`dropdown-list-${question.id}`}
+          aria-activedescendant={
+            activeOption ? `dropdown-option-${question.id}-${activeOption.id}` : undefined
+          }
+          aria-autocomplete="list"
+          aria-label={question.title || "Your answer"}
+          autoComplete="off"
+          autoFocus={autoFocus}
+          // Shows the chosen label while closed, and the live query while open, so
+          // opening the list never looks like it wiped the answer.
+          value={open ? query : selected ? selected.label || "Choice" : ""}
+          placeholder={question.placeholder || "Type or select an option"}
+          onFocus={() => setOpen(true)}
+          onClick={() => setOpen(true)}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setHighlight(0);
+            setOpen(true);
+          }}
+          onKeyDown={onKeyDown}
+          className="placeholder-themed min-w-0 flex-1 bg-transparent text-[24px] outline-none"
+          style={
+            {
+              color: answerColor,
+              "--placeholder-color": `${answerColor}73`,
+            } as React.CSSProperties
+          }
         />
-      </button>
+        <Search size={22} className="shrink-0 opacity-55" style={{ color: answerColor }} />
+      </div>
 
       <AnimatePresence>
         {open && (
-          <motion.ul
-            role="listbox"
+          <motion.div
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
-            className="scrollbar-slim mt-3 flex max-h-[320px] flex-col gap-2.5 overflow-y-auto"
+            className="mt-3 rounded-[10px] p-3 shadow-[0_18px_44px_-12px_rgba(0,0,0,0.28)]"
+            style={{
+              background: theme.background_color,
+              border: `1px solid ${answerColor}1f`,
+            }}
           >
-            {question.options.map((option, index) => (
-              <li key={option.id} role="option" aria-selected={option.id === selectedId}>
-                <ChoiceOption
-                  index={index}
-                  selected={option.id === selectedId}
-                  answerColor={theme.answer_color}
-                  buttonColor={theme.button_color}
-                  onClick={() => {
-                    onChange(option.id === selectedId ? [] : [option.id]);
-                    setOpen(false);
-                  }}
-                  className="cursor-pointer"
+            <ul
+              id={`dropdown-list-${question.id}`}
+              ref={listRef}
+              role="listbox"
+              className="scrollbar-slim flex max-h-[280px] flex-col gap-2 overflow-y-auto"
+            >
+              {matches.map((option, index) => {
+                const isSelected = option.id === selectedId;
+                const isActive = index === activeIndex;
+                return (
+                  <li
+                    key={option.id}
+                    id={`dropdown-option-${question.id}-${option.id}`}
+                    role="option"
+                    aria-selected={isSelected}
+                  >
+                    <button
+                      type="button"
+                      // The list is dismissed on pointerdown elsewhere, so the
+                      // press must not first move focus off the input.
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => choose(option.id)}
+                      // mousemove, not mouseenter: opening the panel grows the
+                      // step, which re-centres it and slides rows under a
+                      // stationary cursor. mouseenter fires on that and would
+                      // pre-highlight whichever row happened to land under the
+                      // pointer — one Enter away from picking it. A layout shift
+                      // does not produce a mousemove.
+                      onMouseMove={() => setHighlight(index)}
+                      className="flex w-full cursor-pointer items-center rounded-[8px] px-4 py-3 text-left text-[17px] transition-colors duration-100"
+                      style={{
+                        background: isSelected
+                          ? `${buttonColor}24`
+                          : isActive
+                            ? `${answerColor}1a`
+                            : `${answerColor}0d`,
+                        color: answerColor,
+                      }}
+                    >
+                      {option.label || <span className="italic opacity-55">Choice</span>}
+                    </button>
+                  </li>
+                );
+              })}
+
+              {matches.length === 0 && (
+                <li
+                  className="px-4 py-3 text-[16px] italic opacity-55"
+                  style={{ color: answerColor }}
                 >
-                  {option.label || <span className="italic opacity-55">Choice</span>}
-                </ChoiceOption>
-              </li>
-            ))}
-          </motion.ul>
+                  {question.options.length === 0
+                    ? "No options in list"
+                    : `No option matches “${query.trim()}”`}
+                </li>
+              )}
+            </ul>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

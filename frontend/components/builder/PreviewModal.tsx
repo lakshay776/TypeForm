@@ -4,8 +4,15 @@ import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { AnswerField, type AnswerValue } from "@/components/form/AnswerField";
-import { IconButton } from "@/components/ui/Button";
-import { AlertCircle, Check, ChevronDown, ChevronUp, Close } from "@/components/ui/Icons";
+import {
+  AlertCircle,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Close,
+  Mobile,
+  Restart,
+} from "@/components/ui/Icons";
 import { isEmptyAnswer, validateAnswer } from "@/lib/answerValidation";
 import { cn, questionLabel } from "@/lib/format";
 import type { DeviceMode } from "@/components/builder/CanvasToolbar";
@@ -31,27 +38,115 @@ interface PreviewModalProps {
 export function PreviewModal({ open, onClose, form, device }: PreviewModalProps) {
   return (
     <AnimatePresence>
-      {open && (
-        <div className="fixed inset-0 z-[110] flex flex-col bg-[#1a1822]/70 p-0 sm:p-6">
-          {/* The run state lives in here, which only exists while the preview is
-              open — so every preview starts from the first step with no answers,
-              without needing an effect to reset it. */}
-          <PreviewRun form={form} device={device} onClose={onClose} />
-        </div>
-      )}
+      {/* Everything below only exists while the preview is open, so each launch
+          starts from the first step with no answers and with the device the
+          builder toolbar was set to — no effects needed to reset any of it. */}
+      {open && <PreviewShell form={form} initialDevice={device} onClose={onClose} />}
     </AnimatePresence>
   );
 }
 
-function PreviewRun({
+/**
+ * Full-screen chrome around a preview run: the floating control pill, the device
+ * frame, and the restart control.
+ *
+ * Restart works by remounting `PreviewRun` under a new key rather than by
+ * clearing its state field by field. The run owns cursor, answers, direction,
+ * error and shake — resetting five things by hand is five chances to forget one,
+ * and a fresh mount is the same code path a first launch takes.
+ */
+function PreviewShell({
   form,
-  device,
+  initialDevice,
   onClose,
 }: {
   form: FormDetail;
-  device: DeviceMode;
+  initialDevice: DeviceMode;
   onClose: () => void;
 }) {
+  const [device, setDevice] = useState<DeviceMode>(initialDevice);
+  const [runKey, setRunKey] = useState(0);
+  const isMobile = device === "mobile";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.18 }}
+      className="fixed inset-0 z-[110] flex flex-col bg-sidebar"
+    >
+      <div className="flex shrink-0 justify-center py-3">
+        <div className="flex items-center gap-1 rounded-[12px] border border-line bg-canvas px-2 py-2 shadow-[0_8px_28px_-10px_rgba(0,0,0,0.25)]">
+          <PreviewToolButton label="Close preview" onClick={onClose}>
+            <Close size={19} />
+          </PreviewToolButton>
+          <PreviewToolButton
+            label={isMobile ? "Switch to desktop preview" : "Switch to mobile preview"}
+            active={isMobile}
+            onClick={() => setDevice(isMobile ? "desktop" : "mobile")}
+          >
+            <Mobile size={19} />
+          </PreviewToolButton>
+          <PreviewToolButton
+            label="Restart the preview"
+            onClick={() => setRunKey((count) => count + 1)}
+          >
+            <Restart size={19} />
+          </PreviewToolButton>
+        </div>
+      </div>
+
+      <div className="flex min-h-0 flex-1 justify-center">
+        <motion.div
+          layout
+          transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+          className={cn(
+            "relative h-full overflow-hidden",
+            isMobile
+              ? "w-full max-w-[420px] rounded-t-[14px] border border-b-0 border-line shadow-[0_-4px_30px_-12px_rgba(0,0,0,0.2)]"
+              : "w-full",
+          )}
+          style={{ background: form.theme.background_color }}
+        >
+          <PreviewRun key={runKey} form={form} onClose={onClose} />
+        </motion.div>
+      </div>
+    </motion.div>
+  );
+}
+
+function PreviewToolButton({
+  label,
+  active = false,
+  onClick,
+  children,
+}: {
+  label: string;
+  active?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      aria-pressed={active}
+      className={cn(
+        "flex h-9 w-10 items-center justify-center rounded-[8px] border transition-colors",
+        active
+          ? "border-ink/25 bg-hover text-ink"
+          : "border-transparent text-ink-soft hover:bg-hover hover:text-ink",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+function PreviewRun({ form, onClose }: { form: FormDetail; onClose: () => void }) {
   const steps = useMemo<Step[]>(() => {
     const list: Step[] = [];
     if (form.show_welcome_screen) list.push({ kind: "welcome" });
@@ -99,6 +194,12 @@ function PreviewRun({
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      // See the matching guard in FormRunner: a field that consumed this key marks
+      // it handled, and defaultPrevented is the only signal that survives both
+      // listeners being attached to `document`. Without it, Escape aimed at an
+      // open dropdown would also tear down the whole preview.
+      if (event.defaultPrevented) return;
+
       if (event.key === "Escape") {
         onClose();
         return;
@@ -128,20 +229,11 @@ function PreviewRun({
   const { theme } = form;
 
   return (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.985 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.99 }}
-            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          <div
             role="dialog"
             aria-modal="true"
             aria-label="Form preview"
-            className={cn(
-              "relative mx-auto flex h-full w-full flex-col overflow-hidden bg-canvas",
-              "sm:rounded-2xl sm:shadow-[0_30px_80px_-16px_rgba(0,0,0,0.5)]",
-              device === "mobile" ? "sm:max-w-[420px]" : "sm:max-w-[1120px]",
-            )}
-            style={{ background: theme.background_color }}
+            className="relative flex h-full w-full flex-col overflow-hidden"
           >
             {/* Progress bar */}
             <div className="absolute inset-x-0 top-0 z-10 h-[3px] bg-black/10">
@@ -151,23 +243,6 @@ function PreviewRun({
                 animate={{ width: `${progress}%` }}
                 transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               />
-            </div>
-
-            <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
-              <span
-                className="rounded-full px-2.5 py-1 text-[11.5px] font-medium"
-                style={{ background: `${theme.answer_color}1f`, color: theme.answer_color }}
-              >
-                Preview
-              </span>
-              <IconButton
-                label="Close preview"
-                onClick={onClose}
-                className="hover:bg-black/5"
-                style={{ color: theme.answer_color }}
-              >
-                <Close size={19} />
-              </IconButton>
             </div>
 
             <div className="relative flex-1 overflow-hidden">
@@ -277,7 +352,7 @@ function PreviewRun({
                 <ChevronDown size={18} />
               </button>
             </div>
-          </motion.div>
+          </div>
   );
 }
 

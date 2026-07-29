@@ -275,3 +275,19 @@ export const BarChart = (p: IconProps) => (
     <path d="M5.4 19.2V13M12 19.2V5.4M18.6 19.2v-8.4" />
   </Svg>
 );
+
+/** Phone outline — toggles the preview between desktop and mobile widths. */
+export const Mobile = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="7" y="3" width="10" height="18" rx="2.4" />
+    <path d="M10.6 18.2h2.8" />
+  </Svg>
+);
+
+/** Circular arrow — restarts the preview from the first step. */
+export const Restart = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M19.6 12a7.6 7.6 0 11-2.3-5.45" />
+    <path d="M18 3.6v3.4h-3.4" />
+  </Svg>
+);

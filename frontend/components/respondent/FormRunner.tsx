@@ -213,6 +213,17 @@ export function FormRunner({ form }: { form: PublicForm }) {
   useEffect(() => {
     if (submitted) return;
     const onKeyDown = (event: KeyboardEvent) => {
+      // A field that already acted on this key marks it handled. Checked via
+      // defaultPrevented rather than by letting the field call stopPropagation:
+      // the App Router hydrates the whole document, so React's delegated listener
+      // and this one are both attached to `document` — and stopPropagation cannot
+      // stop a listener on the same node. defaultPrevented is visible to every
+      // listener regardless of registration order.
+      //
+      // Without this, ArrowDown in an open dropdown would move its highlight and
+      // advance the question in the same keypress.
+      if (event.defaultPrevented) return;
+
       const tag = (event.target as HTMLElement | null)?.tagName;
       const inField = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
 

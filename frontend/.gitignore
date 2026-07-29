@@ -32,6 +32,11 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# Opted in. Neither file holds a secret, and both need to be in the repo:
+# .env.production carries the deployed backend URL, which must be present at build
+# time or the Vercel build silently falls back to localhost (see lib/api.ts).
+!.env.example
+!.env.production
 
 # vercel
 .vercel

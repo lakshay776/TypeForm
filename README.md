@@ -14,7 +14,7 @@ view with per-question summary statistics.
 | Backend | Python 3.12, FastAPI, SQLAlchemy 2.0, Pydantic v2 |
 | Database | SQLite, migrated with Alembic |
 | Tests | pytest + FastAPI `TestClient` |
-| Hosting | Frontend on Vercel, backend on Render (Docker + persistent disk) |
+| Hosting | Frontend on Vercel, backend on Railway (native Python + volume) |
 
 ## Repository layout
 
@@ -646,9 +646,19 @@ so the start command and health check apply without any extra configuration.
 
 ### Order matters
 
-`NEXT_PUBLIC_API_URL` is **inlined into the client bundle at build time**. Deploy the
-backend first, or the frontend will load but every submission will POST to the
-visitor's own `localhost:8000` and fail silently.
+`NEXT_PUBLIC_API_URL` is **inlined into the client bundle at build time**, so it has
+to be correct *before* the frontend builds — not after. Get it wrong and the site
+loads normally while every request goes to the visitor's own `localhost:8000`.
+
+That failure is silent, so the backend URL is committed in `frontend/.env.production`
+rather than left to a dashboard field someone can forget. `NEXT_PUBLIC_*` values are
+inlined into client JavaScript by definition, so this is a hostname, not a secret.
+Next.js resolves `process.env` before any `.env` file, so a Vercel dashboard variable
+still overrides it if the backend moves.
+
+Note the load order the other way too: `.env.local` outranks `.env.production`, so a
+`npm run build` **on your own machine** still points at localhost. That is intended —
+`.env.local` is gitignored and never exists on Vercel.
 
 **1. Backend → Railway.** New project from this repo, set *Root Directory* to
 `backend`, attach a volume, then set:
@@ -667,8 +677,12 @@ start command is specified explicitly.
 
 Verify with `/health` and `/docs` before moving on.
 
-**2. Frontend → Vercel.** Import the repo, set *Root Directory* to `frontend`, and
-set `NEXT_PUBLIC_API_URL` to the Railway URL **before** the first build.
+Railway does not expose a service publicly until you ask it to: *Settings* →
+**Networking → Public Networking → Generate Domain**. A green deploy only means the
+container passed its health check internally.
+
+**2. Frontend → Vercel.** Import the repo and set *Root Directory* to `frontend`.
+No environment variables needed — `.env.production` already carries the backend URL.
 
 **3. Close the loop.** Vercel assigns the real domain on that first deploy, so go back
 and set `CORS_ORIGINS` and `PUBLIC_FORM_BASE_URL` to it. `PUBLIC_FORM_BASE_URL` is
@@ -692,9 +706,10 @@ and the shareable link in one pass.
 - **`randomize_options` is stored but applied client-side**, since option order is
   a presentation concern and the API should stay deterministic.
 - **Client-reported `duration_seconds`** is taken at face value; it is display-only.
-- **SQLite requires a persistent filesystem.** The backend is Dockerised and
-  deployed to Render with a mounted disk (see `render.yaml`). `DATABASE_URL` is
-  configurable so it can move to Postgres if the host has no durable disk.
+- **SQLite requires a persistent filesystem.** The backend runs on Railway with a
+  volume mounted at `/data` (`render.yaml` is kept as a documented alternative).
+  `DATABASE_URL` is configurable so it can move to Postgres if the host has no
+  durable disk.
 
 ## Placeholders
 

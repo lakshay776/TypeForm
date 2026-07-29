@@ -36,11 +36,9 @@ export function Modal({
     };
     document.addEventListener("keydown", onKeyDown);
 
-    // Prevent the page behind the dialog from scrolling.
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
-    // Move focus into the dialog so Tab cycles here and Escape is reachable.
     panelRef.current?.focus();
 
     return () => {
@@ -147,7 +145,6 @@ export function ConfirmModal({
   );
 }
 
-/** Stand-in dialog for the features the assignment allows to be placeholders. */
 export function ComingSoonModal({
   open,
   onClose,

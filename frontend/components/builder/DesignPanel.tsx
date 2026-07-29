@@ -7,13 +7,6 @@ import { Close } from "@/components/ui/Icons";
 import { cn } from "@/lib/format";
 import type { FormTheme, FormUpdatePayload } from "@/lib/types";
 
-/**
- * Preset themes.
- *
- * The brief lists custom themes as a bonus; presets plus per-colour pickers cover
- * it without needing a font-upload pipeline. Every value maps onto a column of
- * `form_themes`, so a chosen theme survives a reload and applies to the public form.
- */
 const PRESETS: { name: string; theme: FormTheme }[] = [
   {
     name: "Default",
@@ -163,8 +156,6 @@ export function DesignPanel({
                   className="h-7 w-7 shrink-0 rounded-md border border-line"
                   style={{ background: String(theme[key]) }}
                 />
-                {/* The native colour input is the control; it is visually hidden so
-                    the swatch can be styled to match the rest of the panel. */}
                 <input
                   type="color"
                   value={String(theme[key])}

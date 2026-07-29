@@ -5,12 +5,6 @@ import { AlertCircle, Plus, Search, Sparkle } from "@/components/ui/Icons";
 import { COLUMN_TEMPLATE } from "@/components/dashboard/FormRow";
 import { cn } from "@/lib/format";
 
-/**
- * Skeleton rows shaped like the real list.
- *
- * Reusing COLUMN_TEMPLATE means the placeholder occupies the same columns as the
- * loaded content, so nothing shifts when the data arrives.
- */
 export function ListSkeleton({ rows = 3 }: { rows?: number }) {
   return (
     <div className="space-y-2" aria-busy="true" aria-label="Loading forms">
@@ -46,7 +40,6 @@ function Bar({ width = 26 }: { width?: number }) {
   );
 }
 
-/** Shown when the creator has no forms at all. */
 export function EmptyState({
   creating,
   onCreateForm,
@@ -81,7 +74,6 @@ export function EmptyState({
   );
 }
 
-/** Shown when a search matches nothing — distinct from having no forms at all. */
 export function NoSearchResults({ query, onClear }: { query: string; onClear: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">

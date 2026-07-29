@@ -4,14 +4,6 @@ import { useLayoutEffect, useRef } from "react";
 
 import { cn } from "@/lib/format";
 
-/**
- * Textarea that grows to fit its content.
- *
- * The canvas edits question titles in place, so a fixed-height box with its own
- * scrollbar would break the illusion that you are typing directly onto the form.
- * Height is set in a layout effect rather than on change so it is also correct on
- * first paint and whenever the value changes from outside.
- */
 export function AutoTextarea({
   value,
   onChange,

@@ -25,10 +25,6 @@ export interface FormActions {
   onDelete: () => void;
 }
 
-/**
- * The `⋯` menu shared by the list row and the grid card, so both views offer
- * exactly the same operations and can't drift apart.
- */
 export function FormActionsMenu({
   form,
   actions,
@@ -141,7 +137,6 @@ export function FormActionsMenu({
   );
 }
 
-/** Draft / Live indicator. Satisfies the brief's "status in the list" requirement. */
 export function StatusPill({ status }: { status: FormSummary["status"] }) {
   const live = status === "published";
   return (

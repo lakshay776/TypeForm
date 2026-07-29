@@ -1,10 +1,3 @@
-/**
- * Icons for question types and the element picker.
- *
- * Kept apart from the general `Icons.tsx` set because these are addressed by
- * name from the type registry rather than imported individually, and because
- * they share a heavier 1.7px stroke to read correctly at 18px inside a tinted tile.
- */
 
 type IconProps = React.SVGProps<SVGSVGElement> & { size?: number };
 
@@ -26,8 +19,6 @@ function Svg({ size = 18, children, ...props }: IconProps) {
     </svg>
   );
 }
-
-/* ---- The eight question types, plus the two screen glyphs and Video ---- */
 
 export const IconShortText = (p: IconProps) => (
   <Svg {...p}>

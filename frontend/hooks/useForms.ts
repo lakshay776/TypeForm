@@ -21,7 +21,6 @@ export const SORT_LABELS: Record<SortKey, string> = {
   responses: "Responses",
 };
 
-/** A settled fetch, tagged with the request it answered. */
 interface Loaded {
   key: string;
   forms: FormSummary[];
@@ -34,38 +33,21 @@ interface Failed {
 
 interface UseFormsResult {
   forms: FormSummary[];
-  /** True while any request is in flight. */
   loading: boolean;
-  /** True only before the first successful load, so a search won't flash a skeleton. */
   initialLoading: boolean;
   error: string | null;
   totalResponses: number;
   reload: () => void;
-  /** Replaces one form in place, for optimistic updates after a mutation. */
   replace: (form: FormSummary) => void;
   remove: (id: number) => void;
   prepend: (form: FormSummary) => void;
 }
 
-/**
- * Loads and caches the creator's forms.
- *
- * Search is sent to the server so filtering matches the backend's `ilike`
- * behaviour, while sorting happens client-side — the whole list is already in
- * memory, so a round trip per sort change would only add latency.
- *
- * `loading` is *derived* by comparing the request key against the key of the last
- * settled result, rather than being set at the top of the effect. Calling
- * `setState` synchronously in an effect body triggers a second render pass before
- * the browser paints, which React's lint rules flag; deriving it avoids that
- * entirely and cannot get out of step with the request it describes.
- */
 export function useForms(search: string, sort: SortKey): UseFormsResult {
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [failed, setFailed] = useState<Failed | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
 
-  // Debounce the search term so typing doesn't fire a request per keystroke.
   const [debouncedSearch, setDebouncedSearch] = useState(search);
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedSearch(search), 220);
@@ -74,7 +56,6 @@ export function useForms(search: string, sort: SortKey): UseFormsResult {
 
   const key = `${debouncedSearch}::${reloadToken}`;
 
-  // Tracks the newest request so a slow earlier response can't overwrite it.
   const latestKey = useRef(key);
 
   useEffect(() => {
@@ -115,7 +96,6 @@ export function useForms(search: string, sort: SortKey): UseFormsResult {
     [loaded],
   );
 
-  /** Mutations keep the current key so they don't look like a stale result. */
   const patch = useCallback(
     (update: (forms: FormSummary[]) => FormSummary[]) => {
       setLoaded((current) => (current ? { ...current, forms: update(current.forms) } : current));

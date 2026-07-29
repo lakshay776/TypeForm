@@ -1,11 +1,3 @@
-/**
- * Inline SVG icon set.
- *
- * Hand-drawn on a 24px grid rather than pulled from an icon library: the set is
- * small, it keeps the bundle free of a dependency, and every glyph can be matched
- * to Typeform's weight (1.6px strokes, round caps) instead of inheriting a
- * library's house style.
- */
 
 type IconProps = React.SVGProps<SVGSVGElement> & { size?: number };
 
@@ -28,14 +20,6 @@ function Svg({ size = 20, children, ...props }: IconProps) {
   );
 }
 
-/**
- * The Typeform mark: a narrow rounded bar beside a rounded square.
- *
- * Proportions match `app/icon.svg`, so the tab icon and the header logo are the
- * same shape. Drawn in `currentColor` rather than a fixed hex — unlike the
- * favicon this sits on the app's own surfaces, so it should follow the
- * surrounding text colour instead of pinning one that may not suit them.
- */
 export function LogoMark({ size = 28, className }: { size?: number; className?: string }) {
   return (
     <svg
@@ -83,7 +67,6 @@ export const Search = (p: IconProps) => (
   </Svg>
 );
 
-/** Four squares with a plus — Integrations, and the per-row integrations button. */
 export const Puzzle = (p: IconProps) => (
   <Svg {...p}>
     <rect x="3.75" y="3.75" width="6.5" height="6.5" rx="1.4" />
@@ -93,7 +76,6 @@ export const Puzzle = (p: IconProps) => (
   </Svg>
 );
 
-/** Brand kit. */
 export const Palette = (p: IconProps) => (
   <Svg {...p}>
     <path d="M12 3.75a8.25 8.25 0 000 16.5c1.24 0 1.9-.86 1.9-1.86 0-1.1-.8-1.64-.8-2.5 0-.86.7-1.39 1.6-1.39h1.55a3.75 3.75 0 003.75-3.75C20 6.6 16.42 3.75 12 3.75z" />
@@ -111,7 +93,6 @@ export const HelpCircle = (p: IconProps) => (
   </Svg>
 );
 
-/** Workspaces — a 2x2 grid of squares. */
 export const Grid2 = (p: IconProps) => (
   <Svg {...p}>
     <rect x="4" y="4" width="6.6" height="6.6" rx="1.4" />
@@ -193,13 +174,6 @@ export const Send = (p: IconProps) => (
   </Svg>
 );
 
-/**
- * The paper plane on the Share button.
- *
- * The notch on the trailing edge and the line through the middle are what stop a
- * right-pointing triangle from reading as "play" — which is what the previous
- * plain triangle did, on a button that sits next to an actual preview control.
- */
 export const ShareArrow = (p: IconProps) => (
   <Svg {...p}>
     <path d="M2.7 4.9L21.3 12 2.7 19.1 5.1 12 2.7 4.9z" />
@@ -288,21 +262,10 @@ export const BarChart = (p: IconProps) => (
   </Svg>
 );
 
-/**
- * The form tile in the workspace list: a rounded square notched at the top centre.
- *
- * Authored as one closed path rather than a rounded `rect` with the notch masked
- * out. A mask needs an id, and this renders once per row — duplicate ids in the
- * document would be invalid markup, and generating unique ones per row is a lot
- * of machinery for a fixed shape. Solid fill for the same reason: an SVG gradient
- * would also need an id.
- */
 export function FormTile({ size = 32 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true">
       <path
-        // Clockwise from the notch vertex: up to the top edge, round each corner,
-        // then back down into the notch.
         d="M20 7 C21.4 3.5 22.6 0 26 0 L30 0 A10 10 0 0 1 40 10 L40 30 A10 10 0 0 1 30 40 L10 40 A10 10 0 0 1 0 30 L0 10 A10 10 0 0 1 10 0 L14 0 C17.4 0 18.6 3.5 20 7 Z"
         fill="#A06CBE"
       />
@@ -310,14 +273,12 @@ export function FormTile({ size = 32 }: { size?: number }) {
   );
 }
 
-/** Hamburger — opens the sidebar drawer on narrow screens. */
 export const Menu = (p: IconProps) => (
   <Svg {...p}>
     <path d="M4 7h16M4 12h16M4 17h16" />
   </Svg>
 );
 
-/** Phone outline — toggles the preview between desktop and mobile widths. */
 export const Mobile = (p: IconProps) => (
   <Svg {...p}>
     <rect x="7" y="3" width="10" height="18" rx="2.4" />
@@ -325,7 +286,6 @@ export const Mobile = (p: IconProps) => (
   </Svg>
 );
 
-/** Circular arrow — restarts the preview from the first step. */
 export const Restart = (p: IconProps) => (
   <Svg {...p}>
     <path d="M19.6 12a7.6 7.6 0 11-2.3-5.45" />

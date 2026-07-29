@@ -10,12 +10,7 @@ if TYPE_CHECKING:
 
 
 class User(Base):
-    """A form creator.
-
-    Real authentication is out of scope for the assignment, so a single seeded
-    row stands in for "the logged-in creator". The table exists so that form
-    ownership is modelled properly and adding auth later is additive.
-    """
+    """A form creator."""
 
     __tablename__ = "users"
 

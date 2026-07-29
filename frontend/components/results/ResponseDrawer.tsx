@@ -9,7 +9,6 @@ import { ACCENT_CLASSES, TYPE_META } from "@/lib/questionTypes";
 import { cn, questionLabel } from "@/lib/format";
 import type { Question, ResponseDetail } from "@/lib/types";
 
-/** "29 Jul 2026, 01:40" — pinned to en-GB/UTC to avoid locale drift. */
 function formatStamp(iso: string | null): string {
   if (!iso) return "—";
   return new Intl.DateTimeFormat("en-GB", {
@@ -28,21 +27,9 @@ interface ResponseDrawerProps {
   onClose: () => void;
   detail: ResponseDetail | null;
   loading: boolean;
-  /** The form's questions, so skipped ones can be shown too. */
   questions: Question[];
 }
 
-/**
- * One response, in full.
- *
- * Driven by the form's questions rather than by the answers returned, because a
- * skipped optional question writes no answer row — iterating the answers alone
- * would silently omit it, and "they didn't answer this" is information the creator
- * wants.
- *
- * Long text is shown complete here; the table truncates, and this is the view that
- * exists so nothing has to be.
- */
 export function ResponseDrawer({
   open,
   onClose,

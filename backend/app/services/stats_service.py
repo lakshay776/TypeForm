@@ -1,9 +1,4 @@
-"""Per-question summary statistics for the results view.
-
-Aggregation is pushed into SQL and grouped by question so the whole summary costs
-a fixed handful of queries regardless of how many questions or responses a form
-has — rather than one query per question.
-"""
+"""Per-question summary statistics for the results view."""
 
 from collections import defaultdict
 from typing import Optional
@@ -140,9 +135,6 @@ def compute_form_stats(db: Session, form: Form) -> FormStats:
 
         if question.type in CHOICE_TYPES:
             counts = option_counts.get(question.id, {})
-            # Percentages are of respondents who answered this question, not of
-            # all responses, so a mostly-skipped optional question still reads
-            # sensibly. Multi-select answers can therefore sum above 100%.
             denominator = answered_count or 1
             summary.option_counts = [
                 OptionCount(

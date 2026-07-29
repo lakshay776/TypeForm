@@ -1,38 +1,25 @@
 @import "tailwindcss";
 
-/*
- * Design tokens read off the Typeform UI.
- *
- * Everything visual is defined here and nowhere else, so a colour or radius can
- * be corrected in one place rather than hunted through components. Tailwind v4
- * turns each `--color-*` entry into utilities (`bg-sidebar`, `text-ink-soft`, ...).
- */
 @theme {
-  /* Surfaces */
   --color-canvas: #ffffff;
   --color-sidebar: #f5f4f6;
-  /* The workspace surface the form list sits on — rows are white cards on top. */
   --color-workspace: #f7f7f8;
   --color-hover: #edecef;
   --color-selected: #e6e5ea;
 
-  /* Text */
   --color-ink: #262627;
   --color-ink-soft: #6e6e76;
   --color-ink-faint: #96959d;
 
-  /* Lines */
   --color-line: #e4e3e7;
   --color-line-soft: #eeedf0;
 
-  /* Accents */
   --color-plum: #2e2a38; /* dark primary buttons */
   --color-plum-hover: #423d50;
   --color-evergreen: #0e7c60; /* "View plans" */
   --color-evergreen-hover: #0a6a52;
   --color-link: #4c5bc8; /* the Updated date */
 
-  /* Status */
   --color-live: #12866a;
   --color-live-bg: #e6f4ef;
   --color-draft: #7a7883;
@@ -40,7 +27,6 @@
   --color-danger: #c8372d;
   --color-danger-bg: #fdeceb;
 
-  /* Form thumbnails */
   --color-thumb-from: #b686d6;
   --color-thumb-to: #9a67c6;
 
@@ -49,7 +35,6 @@
   --radius-card: 12px;
   --radius-control: 8px;
 
-  /* Sidebar width, referenced by both the sidebar and the nav tab rail. */
   --spacing-sidebar: 256px;
 }
 
@@ -65,8 +50,6 @@
     font-family: var(--font-sans);
   }
 
-  /* Only show focus rings for keyboard users — Typeform's chrome is very clean,
-     and a ring on every mouse click reads as noise. */
   :focus-visible {
     outline: 2px solid var(--color-link);
     outline-offset: 2px;
@@ -74,19 +57,11 @@
 }
 
 @layer utilities {
-  /*
-   * Placeholder colour driven by the form's theme.
-   *
-   * Tailwind's `placeholder:` variant can't take a runtime value, and the browser
-   * default is a fixed grey that disappears against a dark custom background.
-   * Setting `--placeholder-color` inline lets the answer colour drive it instead.
-   */
   .placeholder-themed::placeholder {
     color: var(--placeholder-color, currentColor);
     opacity: 1;
   }
 
-  /* The thin scrollbars Typeform uses in its panels. */
   .scrollbar-slim {
     scrollbar-width: thin;
     scrollbar-color: var(--color-line) transparent;

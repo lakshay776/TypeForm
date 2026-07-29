@@ -6,22 +6,13 @@ import { useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/format";
 
 interface DropdownProps {
-  /** Receives the open state so triggers can render a pressed/rotated affordance. */
   trigger: (props: { open: boolean }) => React.ReactNode;
   children: (props: { close: () => void }) => React.ReactNode;
   align?: "start" | "end";
-  /** Menu width. `auto` hugs its content. */
   width?: number | "auto";
   className?: string;
 }
 
-/**
- * Popover menu primitive.
- *
- * Closes on outside click, on Escape, and on scroll of an ancestor — the last one
- * matters because the panel is absolutely positioned, so it would otherwise drift
- * away from its trigger when the page scrolls under it.
- */
 export function Dropdown({
   trigger,
   children,
@@ -45,7 +36,6 @@ export function Dropdown({
 
     document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
-    // `true` captures scrolls on any ancestor, not just the window.
     window.addEventListener("scroll", () => setOpen(false), true);
 
     return () => {
@@ -92,7 +82,6 @@ export function Dropdown({
 
 interface MenuItemProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   icon?: React.ReactNode;
-  /** Trailing text, e.g. a keyboard hint or the current value. */
   hint?: React.ReactNode;
   tone?: "default" | "danger";
   selected?: boolean;

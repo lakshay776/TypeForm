@@ -31,5 +31,6 @@ app.include_router(api_router, prefix=settings.api_prefix)
 
 
 @app.get("/health", tags=["meta"], summary="Liveness probe")
+
 def health() -> dict[str, str]:
     return {"status": "ok"}

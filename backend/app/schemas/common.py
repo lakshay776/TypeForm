@@ -8,13 +8,7 @@ class ORMModel(BaseModel):
 
 
 class RequestModel(BaseModel):
-    """Base for request bodies, rejecting fields the schema doesn't declare.
-
-    Pydantic's default is to silently drop unknown keys, which makes a client bug
-    look like a successful write: a misspelled or not-yet-deployed field returns
-    200 with nothing changed. Failing with a 422 instead surfaces the mismatch
-    where it happens.
-    """
+    """Base for request bodies, rejecting fields the schema doesn't declare."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -40,11 +34,7 @@ class PublishBlocked(BaseModel):
 
 
 class AnswerValidationError(BaseModel):
-    """Body returned with HTTP 422 when submitted answers fail validation.
-
-    Mirrors the shape the respondent UI needs: a top-level message plus a
-    per-question map it can use to jump back to the offending question.
-    """
+    """Body returned with HTTP 422 when submitted answers fail validation."""
 
     detail: str
     issues: list[FieldIssue]

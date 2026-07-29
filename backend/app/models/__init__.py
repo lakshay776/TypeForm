@@ -1,9 +1,4 @@
-"""SQLAlchemy models.
-
-Every model is re-exported here so that importing :mod:`app.models` is enough to
-register the full metadata with :class:`~app.core.database.Base` — which Alembic's
-autogenerate and the seed script both rely on.
-"""
+"""SQLAlchemy models."""
 
 from app.models.enums import CHOICE_TYPES, TEXT_TYPES, FormStatus, QuestionType
 from app.models.form import Form, FormTheme

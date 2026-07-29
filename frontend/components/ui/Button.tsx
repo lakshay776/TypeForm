@@ -20,7 +20,6 @@ const SIZES: Record<Size, string> = {
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   size?: Size;
-  /** Renders a centred spinner and blocks interaction. */
   loading?: boolean;
 }
 
@@ -52,7 +51,6 @@ export function Button({
   );
 }
 
-/** Square icon-only button, used for the row `⋯` and integrations affordances. */
 export function IconButton({
   className,
   label,

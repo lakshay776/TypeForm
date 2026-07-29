@@ -16,6 +16,7 @@ router = APIRouter(prefix="/forms/{form_id}", tags=["results"])
     response_model=FormStats,
     summary="Per-question summary statistics",
 )
+
 def form_summary(db: DbSession, form: OwnedForm) -> FormStats:
     return stats_service.compute_form_stats(db, form)
 
@@ -25,6 +26,7 @@ def form_summary(db: DbSession, form: OwnedForm) -> FormStats:
     response_class=PlainTextResponse,
     summary="Export all responses as CSV",
 )
+
 def export_responses(db: DbSession, form: OwnedForm) -> PlainTextResponse:
     filename = f"{slugify(form.title) or 'responses'}-responses.csv"
     return PlainTextResponse(
@@ -35,6 +37,7 @@ def export_responses(db: DbSession, form: OwnedForm) -> PlainTextResponse:
 
 
 @router.get("/responses", response_model=ResponsePage, summary="List a form's responses")
+
 def list_responses(
     db: DbSession,
     form: OwnedForm,
@@ -49,6 +52,7 @@ def list_responses(
     response_model=ResponseDetail,
     summary="View a single response in full",
 )
+
 def get_response(
     db: DbSession, form: OwnedForm, response_id: Annotated[int, Path(ge=1)]
 ) -> ResponseDetail:

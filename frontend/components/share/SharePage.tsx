@@ -12,19 +12,11 @@ import { ApiError, api, publishProblems } from "@/lib/api";
 import { cn } from "@/lib/format";
 import type { FormDetail } from "@/lib/types";
 
-/**
- * The Share tab.
- *
- * A form only has a link once it is published, so publishing lives here rather
- * than behind a separate dialog — the two questions ("is it live?" and "what's the
- * link?") are the same question from the creator's point of view.
- */
 export function SharePage({
   form: initialForm,
   autoPublish = false,
 }: {
   form: FormDetail;
-  /** Set when arriving from the top bar's Share button, not from the tab. */
   autoPublish?: boolean;
 }) {
   const { success, error } = useToast();
@@ -41,8 +33,6 @@ export function SharePage({
 
   const published = form.status === "published";
   const link = form.public_url ?? "";
-  // Everything up to and including the final slash, so the slug can be edited on
-  // its own with the origin shown as static context.
   const linkBase = link.slice(0, link.lastIndexOf("/") + 1);
 
   const setPublished = useCallback(
@@ -54,8 +44,6 @@ export function SharePage({
         if (next) setBurst(true);
         else success("Form unpublished");
       } catch (cause) {
-        // A blocked publish is a checklist, not a failure — it belongs on the page
-        // rather than in a toast that vanishes before it can be acted on.
         const blockers = publishProblems(cause);
         if (blockers.length > 0) setProblems(blockers);
         else error(next ? "Couldn't publish the form." : "Couldn't unpublish the form.");
@@ -66,14 +54,6 @@ export function SharePage({
     [form.id, success, error],
   );
 
-  /**
-   * Publish once on arrival when the creator pressed Share on a draft.
-   *
-   * The request is fired from a promise chain rather than set synchronously in the
-   * effect body, and the ref guards against a second attempt if this remounts —
-   * publishing twice would be harmless but the animation firing twice would not
-   * look it.
-   */
   const attempted = useRef(false);
   useEffect(() => {
     if (!autoPublish || attempted.current || form.status === "published") return;
@@ -99,7 +79,6 @@ export function SharePage({
       setEditingLink(false);
       success("Link updated");
     } catch (cause) {
-      // A 409 means another form owns that link; anything else is unexpected.
       setSlugError(
         cause instanceof ApiError && cause.status === 409
           ? cause.message
@@ -115,16 +94,12 @@ export function SharePage({
       await navigator.clipboard.writeText(link);
       success("Link copied to clipboard");
     } catch {
-      // Clipboard access needs a secure context; say so rather than fail silently.
       error("Couldn't copy — your browser blocked clipboard access.");
     }
   };
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-sidebar">
-      {/* Only going live is worth animating. Playing a reveal on every arrival
-          meant the wipe fired when simply switching tabs, which reads as the app
-          reloading rather than as something having happened. */}
       {burst && <PublishBurst onDone={() => setBurst(false)} />}
 
       <FormTopBar form={form} active="share" onPlaceholder={setPlaceholder} />
@@ -164,8 +139,6 @@ export function SharePage({
                         aria-label="Edit the link"
                         aria-invalid={slugError !== null}
                         onChange={(event) => {
-                          // Normalised as it is typed, so the field can only ever
-                          // contain something the API will accept.
                           setSlugDraft(normalizeSlug(event.target.value));
                           setSlugError(null);
                         }}
@@ -280,9 +253,6 @@ export function SharePage({
                     </div>
                   </div>
 
-                  {/* Built from the form's own data, so it reflects what a chat app
-                      would actually unfurl for this link — and, like a real unfurl,
-                      clicking it opens the form. */}
                   <a
                     href={link}
                     target="_blank"
@@ -405,13 +375,6 @@ export function SharePage({
   );
 }
 
-/**
- * Coerces typed input toward a valid slug: lowercase, single hyphens, no symbols.
- *
- * Applied on every keystroke so the field cannot hold something the API would
- * reject. Leading and trailing hyphens are left alone here — stripping them mid-word
- * would fight the user as they type "my-form" — and removed by `tidySlug` on save.
- */
 function normalizeSlug(raw: string): string {
   return raw
     .toLowerCase()
@@ -420,12 +383,10 @@ function normalizeSlug(raw: string): string {
     .slice(0, 80);
 }
 
-/** Final tidy-up before sending: the API rejects edge hyphens. */
 function tidySlug(raw: string): string {
   return normalizeSlug(raw).replace(/^-+|-+$/g, "");
 }
 
-/** Domain only, for the unfurl preview. Falls back to the raw string. */
 function hostOf(url: string): string {
   try {
     return new URL(url).host;

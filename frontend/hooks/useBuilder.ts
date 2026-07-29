@@ -6,15 +6,12 @@ import { ApiError, api } from "@/lib/api";
 import { defaultDraft, isChoiceType } from "@/lib/questionTypes";
 import type { FormDetail, FormUpdatePayload, Question, QuestionPayload, QuestionType } from "@/lib/types";
 
-/** What the top bar's status indicator shows. */
 export type SaveState = "idle" | "saving" | "saved" | "error";
 
-/** The canvas edits either a question or one of the two screens. */
 export type Selection = { kind: "question"; id: number } | { kind: "welcome" } | { kind: "ending" };
 
 const AUTOSAVE_DELAY_MS = 600;
 
-/** Strips a loaded question down to the fields the API accepts back. */
 function toPayload(question: Question): QuestionPayload {
   return {
     type: question.type,
@@ -30,10 +27,6 @@ function toPayload(question: Question): QuestionPayload {
     rating_icon: question.rating_icon,
     allow_multiple: question.allow_multiple,
     randomize_options: question.randomize_options,
-    // Ids are echoed back so the server updates options in place rather than
-    // recreating them, which would cascade away existing answers. Options the
-    // canvas has only just added carry a negative placeholder id, which is
-    // dropped here so the server treats them as inserts.
     options: question.options.map((option) => ({
       id: option.id > 0 ? option.id : undefined,
       label: option.label,
@@ -61,15 +54,6 @@ interface UseBuilderResult {
   reload: () => void;
 }
 
-/**
- * Owns the builder's form state.
- *
- * Every edit is applied locally first and persisted on a debounce, so typing a
- * question title never waits on the network. Structural changes — adding,
- * deleting, reordering, changing a type — are sent immediately instead, because
- * they can fail in ways the creator needs to see straight away (a locked type,
- * a rejected reorder) and because they change identity rather than content.
- */
 export function useBuilder(formId: number): UseBuilderResult {
   const [form, setForm] = useState<FormDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -77,19 +61,11 @@ export function useBuilder(formId: number): UseBuilderResult {
   const [selection, setSelection] = useState<Selection>({ kind: "welcome" });
   const [reloadToken, setReloadToken] = useState(0);
 
-  /**
-   * Which load attempt has settled. Compared against the current key to derive
-   * `loading`, rather than setting a flag at the top of the effect — a
-   * synchronous setState there costs an extra render pass before paint and can
-   * fall out of step with the request it is meant to describe.
-   */
   const [settledKey, setSettledKey] = useState<string | null>(null);
   const loadKey = `${formId}::${reloadToken}`;
   const loading = settledKey !== loadKey;
 
-  /** Pending debounce timers, keyed by question id or "form". */
   const timers = useRef(new Map<string, number>());
-  /** Latest unsaved payloads, so a flush always sends the newest state. */
   const pending = useRef(new Map<string, () => Promise<unknown>>());
   const inFlight = useRef(0);
 
@@ -102,9 +78,6 @@ export function useBuilder(formId: number): UseBuilderResult {
         if (!active) return;
         setForm(detail);
         setError(null);
-        // Land on the first question when there is one, so the canvas isn't
-        // showing a screen for a form the creator came back to edit. The welcome
-        // screen is optional, so it is only a fallback when the form has one.
         setSelection(
           detail.questions.length > 0
             ? { kind: "question", id: detail.questions[0].id }
@@ -144,15 +117,6 @@ export function useBuilder(formId: number): UseBuilderResult {
     }
   }, []);
 
-  /**
-   * Flag locally that the live form is now behind the builder.
-   *
-   * Applied optimistically rather than read back from the save response: saves are
-   * debounced and fire-and-forget, so merging a response would either arrive too
-   * late to show the button or overwrite edits typed while it was in flight. The
-   * rule is simple enough to mirror — the server flags any edit to a published
-   * form — and `setPublished` merges the real response, so the clear is authoritative.
-   */
   const markEdited = useCallback(() => {
     setForm((current) =>
       current && current.status === "published" && !current.has_unpublished_edits
@@ -178,8 +142,6 @@ export function useBuilder(formId: number): UseBuilderResult {
     [runSave, markEdited],
   );
 
-  // Flush anything still debounced when the builder unmounts, so navigating away
-  // immediately after typing does not silently drop the last edit.
   useEffect(() => {
     const activeTimers = timers.current;
     const activePending = pending.current;
@@ -217,8 +179,6 @@ export function useBuilder(formId: number): UseBuilderResult {
           ...patch,
           theme: patch.theme ? { ...current.theme, ...patch.theme } : current.theme,
         };
-        // Only the changed keys are sent: the API treats form updates as partial,
-        // so replaying the whole object would overwrite fields nothing touched.
         schedule("form", () => api.forms.update(current.id, patch));
         return next;
       });
@@ -226,7 +186,6 @@ export function useBuilder(formId: number): UseBuilderResult {
     [schedule],
   );
 
-  /** Sends immediately and surfaces the 409 when a type is locked by answers. */
   const changeType = useCallback(
     async (id: number, type: QuestionType) => {
       markEdited();
@@ -238,8 +197,6 @@ export function useBuilder(formId: number): UseBuilderResult {
       const payload: QuestionPayload = {
         ...toPayload(question),
         type,
-        // A choice type needs options; carry the existing ones over when switching
-        // between choice types, otherwise seed the two blanks a fresh one gets.
         options: isChoiceType(type)
           ? question.options.length > 0
             ? question.options.map((o) => ({ id: o.id, label: o.label }))
@@ -289,14 +246,6 @@ export function useBuilder(formId: number): UseBuilderResult {
     [form, markEdited],
   );
 
-  /**
-   * Creates one question per pasted line and returns how many were added.
-   *
-   * Every line becomes a Short Text question. Guessing the type from the wording
-   * would be wrong often enough to be worse than a predictable default — the type
-   * dropdown is one click away, whereas silently mis-typing a question is easy to
-   * miss and, once answered, locks.
-   */
   const importQuestions = useCallback(
     async (titles: string[]) => {
       markEdited();
@@ -333,13 +282,9 @@ export function useBuilder(formId: number): UseBuilderResult {
       try {
         const created = await api.questions.create(form.id, {
           ...toPayload(source),
-          // New option rows, not the originals — copying ids would move the
-          // existing options onto the new question.
           options: source.options.map((option) => ({ label: option.label })),
           position: source.position + 1,
         });
-        // The insert shifted every later position, so take the server's ordering
-        // rather than guessing at it.
         const refreshed = await api.forms.get(form.id);
         setForm(refreshed);
         setSelection({ kind: "question", id: created.id });
@@ -356,7 +301,6 @@ export function useBuilder(formId: number): UseBuilderResult {
     async (id: number) => {
       markEdited();
       if (!form) return;
-      // Drop any queued autosave for a question that is about to stop existing.
       const timer = timers.current.get(`q:${id}`);
       if (timer) window.clearTimeout(timer);
       timers.current.delete(`q:${id}`);
@@ -369,7 +313,6 @@ export function useBuilder(formId: number): UseBuilderResult {
         ...form,
         questions: remaining.map((question, position) => ({ ...question, position })),
       });
-      // Select the neighbour that takes its place, falling back to the one before.
       const neighbour = remaining[index] ?? remaining[index - 1];
       setSelection(neighbour ? { kind: "question", id: neighbour.id } : { kind: "welcome" });
 

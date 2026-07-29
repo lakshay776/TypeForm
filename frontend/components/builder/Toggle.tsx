@@ -3,7 +3,6 @@
 import { HelpCircle } from "@/components/ui/Icons";
 import { cn } from "@/lib/format";
 
-/** Labelled switch row, the repeated unit of the settings panel. */
 export function ToggleRow({
   label,
   checked,
@@ -15,7 +14,6 @@ export function ToggleRow({
   checked: boolean;
   onChange: (checked: boolean) => void;
   disabled?: boolean;
-  /** Adds the small `?` affordance and a tooltip. */
   hint?: string;
 }) {
   return (
@@ -47,18 +45,11 @@ export function ToggleRow({
           disabled && "cursor-not-allowed opacity-50",
         )}
       >
-        {/* `left` is set explicitly. Without it an absolutely positioned child
-            falls back to its static position, and a <button> centres its content
-            by default — which parked the knob half-way across the track and, once
-            translated, entirely outside it. Anchoring to the left edge means the
-            translate distance is simply the track's travel: 38 - 3 - 3 - 16. */}
         <span
           className={cn(
             "absolute top-[3px] left-[3px] h-4 w-4 rounded-full",
             "transition-[transform,background-color] duration-200 ease-out",
             "shadow-[0_1px_2px_rgba(24,22,30,0.28)]",
-            // The knob has to change colour with the track: a white knob is
-            // invisible against the light "off" track.
             checked ? "translate-x-4 bg-white" : "translate-x-0 bg-plum",
           )}
         />
@@ -67,7 +58,6 @@ export function ToggleRow({
   );
 }
 
-/** Collapsible-looking section card, matching the panel's grouping. */
 export function PanelSection({
   title,
   action,
@@ -88,7 +78,6 @@ export function PanelSection({
   );
 }
 
-/** Compact numeric input used by the per-type settings. */
 export function NumberRow({
   label,
   value,
@@ -116,8 +105,6 @@ export function NumberRow({
         aria-label={label}
         onChange={(event) => {
           const raw = event.target.value;
-          // An empty field means "no limit", which the API models as null —
-          // distinct from 0, which is a real bound.
           onChange(raw === "" ? null : Number(raw));
         }}
         className="w-[86px] rounded-md border border-line bg-canvas px-2 py-1.5 text-right text-[13.5px] text-ink outline-none focus:border-plum"

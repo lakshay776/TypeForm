@@ -6,8 +6,6 @@ from sqlalchemy import engine_from_config, pool
 from app.core.config import settings
 from app.core.database import Base
 
-# Importing the models package registers every table on Base.metadata, which is
-# what autogenerate diffs against.
 import app.models  # noqa: F401
 
 config = context.config
@@ -41,13 +39,10 @@ def run_migrations_online() -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            # SQLite cannot ALTER most column properties; batch mode rewrites the
-            # table instead, so future migrations are not blocked by the backend.
             render_as_batch=True,
         )
         with context.begin_transaction():
             context.run_migrations()
-
 
 if context.is_offline_mode():
     run_migrations_offline()

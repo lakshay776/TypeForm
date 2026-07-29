@@ -16,13 +16,10 @@ class QuestionType(str, Enum):
     YES_NO = "yes_no"
     RATING = "rating"
 
-
-#: Types whose valid answers come from the question's own option rows.
 CHOICE_TYPES: frozenset[QuestionType] = frozenset(
     {QuestionType.MULTIPLE_CHOICE, QuestionType.DROPDOWN}
 )
 
-#: Types stored in ``answers.value_text``.
 TEXT_TYPES: frozenset[QuestionType] = frozenset(
     {QuestionType.SHORT_TEXT, QuestionType.LONG_TEXT, QuestionType.EMAIL}
 )

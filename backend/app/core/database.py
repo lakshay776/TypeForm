@@ -11,8 +11,6 @@ _is_sqlite = settings.database_url.startswith("sqlite")
 
 engine = create_engine(
     settings.database_url,
-    # SQLite guards connections against cross-thread use by default; FastAPI's
-    # threadpool hands sessions to worker threads, so that guard has to be lifted.
     connect_args={"check_same_thread": False} if _is_sqlite else {},
     pool_pre_ping=True,
 )
@@ -21,11 +19,9 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, expi
 
 
 @event.listens_for(Engine, "connect")
-def _enable_sqlite_foreign_keys(dbapi_connection, _connection_record) -> None:
-    """SQLite ignores FOREIGN KEY constraints unless they are enabled per connection.
 
-    Without this, ``ON DELETE CASCADE`` on questions/answers is silently a no-op.
-    """
+def _enable_sqlite_foreign_keys(dbapi_connection, _connection_record) -> None:
+    """SQLite ignores FOREIGN KEY constraints unless they are enabled per connection."""
     if not _is_sqlite:
         return
     cursor = dbapi_connection.cursor()

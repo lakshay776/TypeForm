@@ -40,12 +40,7 @@ def get_published_form_by_slug(db: Session, slug: str) -> Optional[Form]:
 
 
 def ensure_theme(db: Session, form: Form) -> FormTheme:
-    """Return the form's theme, creating the default row on first access.
-
-    Themes are created lazily so that every form does not carry a theme row it
-    never diverges from, while API consumers can still rely on ``theme`` always
-    being present in responses.
-    """
+    """Return the form's theme, creating the default row on first access."""
     if form.theme is None:
         form.theme = FormTheme(form_id=form.id)
         db.flush()
@@ -56,11 +51,6 @@ def public_url(form: Form) -> Optional[str]:
     if not form.is_published:
         return None
     return f"{settings.public_form_base_url.rstrip('/')}/{form.slug}"
-
-
-# --------------------------------------------------------------------------- #
-# Serialisation
-# --------------------------------------------------------------------------- #
 
 
 def to_summary(form: Form, *, question_count: int, response_count: int) -> FormSummary:
@@ -113,11 +103,6 @@ def to_public(db: Session, form: Form) -> PublicForm:
     )
 
 
-# --------------------------------------------------------------------------- #
-# Queries
-# --------------------------------------------------------------------------- #
-
-
 def count_responses(db: Session, form_id: int) -> int:
     return db.scalar(
         select(func.count(Response.id)).where(
@@ -133,11 +118,7 @@ def list_forms(
     status: Optional[FormStatus] = None,
     search: Optional[str] = None,
 ) -> list[FormSummary]:
-    """Dashboard listing with question and response counts in a single query.
-
-    ``count(distinct ...)`` is required because joining both questions and
-    responses multiplies the rows; distinct collapses that back to real counts.
-    """
+    """Dashboard listing with question and response counts in a single query."""
     stmt = (
         select(
             Form,
@@ -163,11 +144,6 @@ def list_forms(
         to_summary(form, question_count=q_count, response_count=r_count)
         for form, q_count, r_count in db.execute(stmt).all()
     ]
-
-
-# --------------------------------------------------------------------------- #
-# Mutations
-# --------------------------------------------------------------------------- #
 
 
 def create_form(db: Session, owner_id: int, payload: FormCreate) -> Form:
@@ -197,8 +173,6 @@ class SlugTaken(Exception):
 def update_form(db: Session, form: Form, payload: FormUpdate) -> Form:
     data = payload.model_dump(exclude_unset=True, exclude={"theme"})
 
-    # Checked before anything is written, so a rejected slug leaves the rest of the
-    # payload unapplied rather than half-saving the update.
     requested_slug = data.pop("slug", None)
     if requested_slug is not None and requested_slug != form.slug:
         clash = db.scalar(
@@ -297,21 +271,13 @@ class FormNotPublishable(Exception):
 
 
 def publish_blockers(form: Form) -> list[str]:
-    """Everything genuinely preventing this form from going live.
-
-    Only conditions that make the form *unanswerable* count. A missing question
-    title or a blank option label is incomplete rather than broken — the UI shows a
-    placeholder for it, the same way Typeform does — so refusing to publish over
-    that would block a creator from sharing a draft they are still wording.
-    """
+    """Everything genuinely preventing this form from going live."""
     problems: list[str] = []
 
     if not form.questions:
         problems.append("Add at least one question.")
 
     for question in form.questions:
-        # A choice question with nothing to choose from cannot be answered at all.
-        # The create/update schemas already reject this, so it is a backstop.
         if question.type in CHOICE_TYPES and not question.options:
             problems.append(f"Question {question.position + 1} needs at least one option.")
 
@@ -325,16 +291,10 @@ def set_published(db: Session, form: Form, published: bool) -> Form:
             raise FormNotPublishable(problems)
 
         form.status = FormStatus.PUBLISHED
-        # Stamped only on first publish so the dashboard can show when a form
-        # originally went live, not when it was last toggled.
         form.published_at = form.published_at or utcnow()
-        # Publishing is what clears the flag — this is the same call that backs
-        # "Publish edits" on an already-live form.
         form.has_unpublished_edits = False
     else:
         form.status = FormStatus.DRAFT
-        # Nothing is live to be behind any more, so the flag would be meaningless
-        # and would resurface the moment the form was published again.
         form.has_unpublished_edits = False
     db.commit()
     db.refresh(form)

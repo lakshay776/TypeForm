@@ -35,7 +35,6 @@ interface PagesPanelProps {
   onReorder: (ids: number[]) => void;
   onDelete: (id: number) => void;
   onDuplicate: (id: number) => void;
-  /** Whether this form has a welcome screen; it is opt-in, not automatic. */
   showWelcomeScreen: boolean;
   onRemoveWelcomeScreen: () => void;
   onPlaceholder: (feature: string) => void;
@@ -54,8 +53,6 @@ export function PagesPanel({
   onPlaceholder,
 }: PagesPanelProps) {
   const sensors = useSensors(
-    // A small distance threshold means a click still selects the question rather
-    // than being swallowed as a zero-length drag.
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
@@ -100,12 +97,10 @@ export function PagesPanel({
         </svg>
       </button>
 
-      {/* Pages card */}
       <div className="flex min-h-0 flex-1 flex-col rounded-[10px] border border-line bg-canvas p-2.5">
         <p className="px-1.5 pt-1.5 pb-2.5 text-[15px] font-semibold text-ink">Pages</p>
 
         <div className="scrollbar-slim min-h-0 flex-1 overflow-y-auto">
-          {/* Only present once the creator has added it from the element picker. */}
           {showWelcomeScreen && (
             <ScreenRow
               label="Welcome screen"
@@ -178,7 +173,6 @@ export function PagesPanel({
         </button>
       </div>
 
-      {/* Endings card */}
       <div className="shrink-0 rounded-[10px] border border-line bg-canvas p-2.5">
         <div className="flex items-center justify-between px-1.5 py-1">
           <p className="text-[15px] font-semibold text-ink">Endings</p>
@@ -206,13 +200,6 @@ export function PagesPanel({
   );
 }
 
-/**
- * Welcome / ending rows: selectable like questions but not draggable.
- *
- * `onRemove` is only passed for the welcome screen, which is optional. The
- * thank-you screen has no remove action because every submission needs somewhere
- * to land.
- */
 function ScreenRow({
   label,
   icon,
@@ -304,21 +291,12 @@ function SortableQuestion({
 
   const rowRef = useRef<HTMLLIElement | null>(null);
 
-  /**
-   * Keep the selected row on screen.
-   *
-   * Questions are appended to the end of the list, so adding or importing one on a
-   * form that already fills the panel would otherwise put it below the fold — the
-   * canvas would change but the panel would look untouched, which reads as "it
-   * didn't work". Skipped mid-drag so this can't fight dnd-kit's own transforms.
-   */
   useEffect(() => {
     if (selected && !isDragging) {
       rowRef.current?.scrollIntoView({ block: "nearest" });
     }
   }, [selected, isDragging]);
 
-  // dnd-kit needs the node and so does the scroll effect, so the ref is composed.
   const setRefs = (node: HTMLLIElement | null) => {
     setNodeRef(node);
     rowRef.current = node;
@@ -334,8 +312,6 @@ function SortableQuestion({
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
         "group relative",
-        // Lifting the dragged row above its siblings stops the ones it passes
-        // over from being painted on top of it mid-drag.
         isDragging && "z-10",
       )}
     >
@@ -346,8 +322,6 @@ function SortableQuestion({
           isDragging && "bg-canvas shadow-[0_6px_18px_-4px_rgba(24,22,30,0.22)]",
         )}
       >
-        {/* The whole row is the drag handle *and* the select target: dnd-kit's
-            distance constraint decides which gesture it was. */}
         <button
           type="button"
           onClick={onSelect}

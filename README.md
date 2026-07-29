@@ -630,11 +630,9 @@ that rules out the obvious free options:
 | Fly.io | Volumes are cheap ($0.15/GB/month) but there is no free tier |
 | **Railway** | Volumes on every tier — 0.5 GB on Trial, 5 GB on Hobby |
 
-The database is ~130 KB, so the smallest volume is ample. `render.yaml` is kept as a
-documented alternative, pinned to `plan: starter` because a `free` plan with a disk
-is rejected.
+The database is ~130 KB, so the smallest volume is ample.
 
-**No Docker.** Both hosts install straight from `requirements.txt` using their native
+**No Docker.** Railway installs straight from `requirements.txt` using its native
 Python runtime, which is one less moving part than maintaining an image for a plain
 ASGI app. `backend/.python-version` pins 3.12 so the deployed interpreter matches the
 one the tests run on — Railpack otherwise defaults to 3.13.
@@ -717,9 +715,8 @@ and the shareable link in one pass.
   a presentation concern and the API should stay deterministic.
 - **Client-reported `duration_seconds`** is taken at face value; it is display-only.
 - **SQLite requires a persistent filesystem.** The backend runs on Railway with a
-  volume mounted at `/data` (`render.yaml` is kept as a documented alternative).
-  `DATABASE_URL` is configurable so it can move to Postgres if the host has no
-  durable disk.
+  volume mounted at `/data`. `DATABASE_URL` is configurable so it can move to
+  Postgres if the host has no durable disk.
 
 ## Placeholders
 

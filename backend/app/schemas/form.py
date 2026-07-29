@@ -11,12 +11,7 @@ HEX_COLOR = r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
 
 
 class FormThemeUpdate(RequestModel):
-    """Partial theme update.
-
-    Every field is optional and only the ones actually sent are applied, so
-    changing one colour cannot reset the rest. The defaults live on the
-    ``form_themes`` table, which is the single source of truth for them.
-    """
+    """Partial theme update."""
 
     background_color: Optional[str] = Field(default=None, pattern=HEX_COLOR)
     question_color: Optional[str] = Field(default=None, pattern=HEX_COLOR)
@@ -48,11 +43,8 @@ class ScreenSettings(RequestModel):
 
 class FormCreate(RequestModel):
     title: str = Field(default="My new form", min_length=1, max_length=255)
-    #: Optional starter questions, so "create from template" is one round trip.
     questions: list[QuestionCreate] = Field(default_factory=list)
 
-
-#: Lowercase words joined by single hyphens — what a URL path segment should be.
 SLUG_PATTERN = r"^[a-z0-9]+(?:-[a-z0-9]+)*$"
 
 
@@ -61,9 +53,6 @@ class FormUpdate(RequestModel):
 
     title: Optional[str] = Field(default=None, min_length=1, max_length=255)
 
-    #: Changing this rewrites the public link and takes the previous one offline
-    #: immediately. Collected responses are unaffected — they reference the form's
-    #: id, not its slug.
     slug: Optional[str] = Field(default=None, min_length=3, max_length=80, pattern=SLUG_PATTERN)
     show_welcome_screen: Optional[bool] = None
     welcome_heading: Optional[str] = Field(default=None, max_length=255)
@@ -87,9 +76,7 @@ class FormSummary(ORMModel):
 
     question_count: int = 0
     response_count: int = 0
-    #: Absolute shareable link, present only once the form is published.
     public_url: Optional[str] = None
-    #: True when a live form has been edited since it was last published.
     has_unpublished_edits: bool = False
 
 
@@ -107,11 +94,7 @@ class FormDetail(FormSummary):
 
 
 class PublicForm(ORMModel):
-    """The respondent-facing projection of a form.
-
-    Deliberately narrower than :class:`FormDetail`: no owner, no counts, no
-    timestamps, no numeric id — nothing a respondent has no business seeing.
-    """
+    """The respondent-facing projection of a form."""
 
     slug: str
     title: str

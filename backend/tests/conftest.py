@@ -8,12 +8,9 @@ from app.main import app
 
 
 @pytest.fixture
-def client(tmp_path):
-    """A TestClient backed by a throwaway SQLite file.
 
-    A file rather than ``:memory:`` because the app opens its own connections;
-    an in-memory database would give each connection a private, empty schema.
-    """
+def client(tmp_path):
+    """A TestClient backed by a throwaway SQLite file."""
     engine = create_engine(
         f"sqlite:///{tmp_path / 'test.db'}", connect_args={"check_same_thread": False}
     )

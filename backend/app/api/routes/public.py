@@ -1,8 +1,4 @@
-"""Unauthenticated endpoints backing the respondent flow.
-
-Nothing here is creator-scoped: a published form is fillable by anyone holding the
-link, which is the point of the shareable public URL.
-"""
+"""Unauthenticated endpoints backing the respondent flow."""
 
 from typing import Annotated, Union
 
@@ -26,8 +22,6 @@ SlugPath = Annotated[str, Path(min_length=1, max_length=80)]
 def _load_published(db: DbSession, slug: str):
     form = form_service.get_published_form_by_slug(db, slug)
     if form is None:
-        # Unpublished and non-existent slugs are indistinguishable from outside,
-        # so an unpublished draft's link cannot be used to probe for its existence.
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=_UNAVAILABLE)
     return form
 
@@ -37,6 +31,7 @@ def _load_published(db: DbSession, slug: str):
     response_model=PublicForm,
     summary="Fetch a published form by its public slug",
 )
+
 def get_public_form(db: DbSession, slug: SlugPath) -> PublicForm:
     return form_service.to_public(db, _load_published(db, slug))
 
@@ -48,6 +43,7 @@ def get_public_form(db: DbSession, slug: SlugPath) -> PublicForm:
     responses={422: {"model": AnswerValidationError, "description": "Answers failed validation"}},
     summary="Submit a response",
 )
+
 def submit_response(
     db: DbSession, request: Request, slug: SlugPath, payload: ResponseSubmit
 ) -> Union[ResponseCreated, JSONResponse]:
@@ -57,8 +53,6 @@ def submit_response(
             db, form, payload, user_agent=request.headers.get("user-agent", "")
         )
     except SubmissionRejected as exc:
-        # Returned as a plain body rather than an HTTPException so the issue list
-        # sits at the top level, matching AnswerValidationError.
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             content=AnswerValidationError(

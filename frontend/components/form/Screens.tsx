@@ -8,25 +8,6 @@ import { AlertCircle, Check } from "@/components/ui/Icons";
 import { cn, questionLabel } from "@/lib/format";
 import type { FormTheme, Question } from "@/lib/types";
 
-/**
- * The three screens a respondent moves through, shared by the builder's preview
- * and the public form.
- *
- * These used to exist twice — once in `respondent/Screens.tsx` and again inline in
- * `PreviewModal` — and the copies drifted: the preview's ending had a smaller tick,
- * a smaller heading and no share row, so the preview was quietly showing something
- * the respondent would never see. One copy is the only way that stays fixed.
- *
- * `AnswerField` already worked this way, which is why answers never drifted.
- */
-
-/**
- * The fields a screen needs, and nothing more.
- *
- * Structural rather than tied to `PublicForm` or `FormDetail` so both satisfy it —
- * the preview holds the creator's full form, the public flow holds the narrowed
- * respondent projection, and neither needs converting.
- */
 export interface ScreenForm {
   title: string;
   welcome_heading: string;
@@ -35,14 +16,12 @@ export interface ScreenForm {
   theme: FormTheme;
 }
 
-/** Shared content column: left-aligned, centred in the viewport. */
 function Column({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <div className={cn("mx-auto w-full max-w-[900px] px-6 sm:px-10", className)}>{children}</div>
   );
 }
 
-/** The dark primary action: Start, OK on a question, Submit on the last one. */
 export function ActionButton({
   theme,
   onClick,
@@ -67,7 +46,6 @@ export function ActionButton({
   );
 }
 
-/** "press Enter ↵" hint shown beside the primary action. */
 export function EnterHint({ theme, label = "Enter" }: { theme: FormTheme; label?: string }) {
   return (
     <span className="text-[13px]" style={{ color: `${theme.answer_color}99` }}>
@@ -85,8 +63,6 @@ export function WelcomeScreen({
 }) {
   const { theme } = form;
 
-  // Centred to match the builder canvas. Question screens stay left-aligned; it is
-  // only the welcome and ending screens that centre.
   return (
     <Column className="text-center">
       <h1
@@ -174,8 +150,6 @@ export function QuestionScreen({
             </p>
           )}
 
-          {/* Keyed on shakeKey so pressing OK on an already-invalid answer replays
-              the nudge — without it the animation only runs the first time. */}
           <motion.div
             key={shakeKey}
             animate={error ? { x: [0, -7, 6, -4, 0] } : { x: 0 }}
@@ -197,8 +171,6 @@ export function QuestionScreen({
             {error && (
               <motion.p
                 id={errorId}
-                // assertive: the respondent has just tried to move on, so this
-                // needs to interrupt rather than wait its turn.
                 role="alert"
                 aria-live="assertive"
                 initial={{ opacity: 0, y: -4 }}
@@ -229,13 +201,6 @@ export function ThankYouScreen({
   form,
   heading,
   description,
-  /**
-   * Renders the identical screen with its outbound actions inert.
-   *
-   * A flag rather than a second component: the whole reason this file exists is
-   * that a separate preview ending drifted from the real one. Only behaviour
-   * differs here, never layout.
-   */
   preview = false,
 }: {
   form: ScreenForm;
@@ -345,8 +310,6 @@ function ShareLink({
   const shape =
     "flex h-10 w-10 items-center justify-center rounded-[7px] text-white transition-transform";
 
-  // A span, not a disabled link: in the preview these must not open a share dialog
-  // for a form nobody has filled in, and there is no such thing as a disabled <a>.
   if (inert) {
     return (
       <span className={cn(shape, "opacity-60")} style={{ background }} aria-hidden="true">
@@ -359,8 +322,6 @@ function ShareLink({
     <a
       href={href}
       target="_blank"
-      // noreferrer as well as noopener: these are third-party share endpoints and
-      // there is no reason to leak the form's URL as a referrer header.
       rel="noopener noreferrer"
       aria-label={label}
       title={label}

@@ -64,11 +64,7 @@ def _to_answer_out(answer: Answer) -> AnswerOut:
 def submit_response(
     db: Session, form: Form, payload: ResponseSubmit, *, user_agent: str = ""
 ) -> Response:
-    """Validate and persist a respondent's submission.
-
-    Nothing is written unless every answer validates, so a rejected submission
-    never leaves a partial row behind for the creator to puzzle over.
-    """
+    """Validate and persist a respondent's submission."""
     result = validate_submission(form, payload.answers)
     if not result.ok:
         raise SubmissionRejected(result.issues)
@@ -113,8 +109,6 @@ def _response_query(form_id: int):
             .selectinload(Answer.question)
             .selectinload(Question.options)
         )
-        # Newest first, with id as a tiebreaker so pagination is stable when
-        # several responses share a timestamp (as seeded data does).
         .order_by(Response.submitted_at.desc(), Response.id.desc())
     )
 

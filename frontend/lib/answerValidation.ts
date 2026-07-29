@@ -1,23 +1,9 @@
 import type { AnswerValue } from "@/components/form/AnswerField";
 import type { Question } from "@/lib/types";
 
-/**
- * Client-side answer validation.
- *
- * A deliberate mirror of `backend/app/services/answer_validation.py`. The server
- * is the authority — it re-checks everything and a crafted request cannot get
- * past it — but a respondent should not have to wait for a round trip to be told
- * an email is malformed.
- *
- * The messages are copied verbatim from the backend so the same mistake never
- * produces two different wordings depending on which layer caught it. If a rule
- * changes there, it has to change here.
- */
-
 const REQUIRED_MESSAGE = "Please fill this in";
 const REQUIRED_CHOICE_MESSAGE = "Please make a selection";
 
-/** Types whose answer is chosen by clicking rather than typed. */
 const SELECTION_TYPES: ReadonlySet<Question["type"]> = new Set([
   "multiple_choice",
   "dropdown",
@@ -25,14 +11,8 @@ const SELECTION_TYPES: ReadonlySet<Question["type"]> = new Set([
   "rating",
 ]);
 
-/**
- * Pragmatic email shape check. The server uses a full RFC-aware validator, so
- * anything this lets through is still caught before it is stored; the point here
- * is to catch the obvious "forgot the @" case instantly.
- */
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-/** Mirrors the backend's `_is_empty`: `false` and `0` are answers, not blanks. */
 export function isEmptyAnswer(value: AnswerValue): boolean {
   if (value === null || value === undefined) return true;
   if (typeof value === "string") return value.trim() === "";
@@ -40,17 +20,10 @@ export function isEmptyAnswer(value: AnswerValue): boolean {
   return false;
 }
 
-/** Matches the backend's `_pretty`: drop the trailing `.0` on whole numbers. */
 function pretty(value: number): string {
   return Number.isInteger(value) ? String(value) : String(value);
 }
 
-/**
- * Returns the message to show, or `null` when the answer is acceptable.
- *
- * Skipping an optional question is valid, which is why emptiness is checked
- * before anything type-specific.
- */
 export function validateAnswer(question: Question, value: AnswerValue): string | null {
   if (isEmptyAnswer(value)) {
     if (!question.is_required) return null;
@@ -75,8 +48,6 @@ export function validateAnswer(question: Question, value: AnswerValue): string |
     case "number": {
       if (typeof value === "boolean") return "Please enter a number";
       const text = typeof value === "string" ? value.trim() : value;
-      // Number("") is 0, so an all-whitespace string has to be rejected before
-      // the conversion rather than after it.
       if (text === "") return "Please enter a number";
       const number = Number(text);
       if (!Number.isFinite(number)) return "Please enter a number";
@@ -116,7 +87,6 @@ export function validateAnswer(question: Question, value: AnswerValue): string |
   }
 }
 
-/** Every question that would be rejected, keyed by question id. */
 export function validateAll(
   questions: Question[],
   answers: Record<number, AnswerValue>,

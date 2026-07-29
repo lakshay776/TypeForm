@@ -8,24 +8,9 @@ import { FormTile, Puzzle } from "@/components/ui/Icons";
 import { cn, formatCount, formatDate } from "@/lib/format";
 import type { FormSummary } from "@/lib/types";
 
-/**
- * Shared column template.
- *
- * The header row and every data row consume this same string, which is what
- * guarantees the "Responses / Completed / Updated" headings stay aligned with
- * their values. Defining it twice is how those drift apart.
- */
 export const COLUMN_TEMPLATE =
   "grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1fr)_96px_104px_120px_112px_40px] items-center gap-3";
 
-/**
- * Columns that only appear once there is room for them.
- *
- * Responses, Completed, Updated and Integrations are secondary to knowing which
- * form a row is: at 375px the six-column template left the title about 40px wide.
- * The row menu stays at every width, since deleting and duplicating are the
- * actions people actually reach for.
- */
 const SECONDARY_CELL = "hidden md:block";
 
 interface FormRowProps {
@@ -114,7 +99,6 @@ function Cell({ children, className }: { children: React.ReactNode; className?: 
   return <span className={cn("text-[14px] text-ink-soft", className)}>{children}</span>;
 }
 
-/** Inline title editor: commits on Enter or blur, abandons on Escape. */
 function RenameField({
   initialValue,
   onSubmit,
@@ -126,8 +110,6 @@ function RenameField({
 }) {
   const [value, setValue] = useState(initialValue);
   const inputRef = useRef<HTMLInputElement>(null);
-  // Escape and blur both fire; this stops the blur handler from also committing
-  // after the user has already cancelled.
   const settled = useRef(false);
 
   useEffect(() => {

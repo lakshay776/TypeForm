@@ -3,14 +3,6 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 
-/**
- * The two-beat confirmation played when a form goes live: a tick appears, then an
- * arrow sweeps out to the right — published, then shared.
- *
- * Each beat advances from motion's `onAnimationComplete` rather than a chain of
- * timers, so the sequence can't drift out of step with the animation it describes
- * and there is nothing to clear on unmount.
- */
 export function PublishBurst({ onDone }: { onDone?: () => void }) {
   const [beat, setBeat] = useState<"tick" | "arrow" | "done">("tick");
 

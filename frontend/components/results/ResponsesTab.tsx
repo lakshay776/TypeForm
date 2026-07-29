@@ -8,11 +8,9 @@ import { ACCENT_CLASSES, TYPE_META, isChoiceType } from "@/lib/questionTypes";
 import { cn, questionLabel } from "@/lib/format";
 import type { Question, ResponseListItem } from "@/lib/types";
 
-/** "29 Jul 2026" / "01:40", split over two lines as the reference does. */
 function formatStamp(iso: string | null): { date: string; time: string } {
   if (!iso) return { date: "—", time: "" };
   const value = new Date(iso);
-  // Pinned to en-GB/UTC so server-rendered and client-rendered text agree.
   return {
     date: new Intl.DateTimeFormat("en-GB", {
       day: "2-digit",
@@ -40,16 +38,6 @@ interface ResponsesTabProps {
   exportHref: string;
 }
 
-/**
- * The submissions table: one row per response, one column per question.
- *
- * Columns come from the form definition rather than from the answers present, so
- * every row is the same width even where respondents skipped questions — a skip
- * shows as "–" rather than shifting the grid.
- *
- * Wide forms scroll sideways. The timestamp column is sticky so a row stays
- * identifiable once the question columns have scrolled past.
- */
 export function ResponsesTab({
   questions,
   items,
@@ -62,13 +50,6 @@ export function ResponsesTab({
 }: ResponsesTabProps) {
   const [query, setQuery] = useState("");
 
-  /**
-   * Filters the rows already loaded, matching against every rendered answer.
-   *
-   * Deliberately client-side over the loaded page rather than a server query: the
-   * API has no search parameter, and inventing one would be a bigger change than
-   * this view needs. "Showing X of Y" above the table keeps that limit visible.
-   */
   const visible = useMemo(() => {
     const term = query.trim().toLowerCase();
     if (!term) return items;
@@ -121,8 +102,6 @@ export function ResponsesTab({
         </ToolbarButton>
 
         <div className="ml-auto flex items-center gap-2.5">
-          {/* A plain link so the browser handles the download and honours the
-              Content-Disposition filename the API sends. */}
           <a
             href={exportHref}
             aria-label="Download responses as CSV"
@@ -137,8 +116,6 @@ export function ResponsesTab({
         </div>
       </div>
 
-      {/* Shown only while filtering. The unfiltered count already lives in the
-          "Responses [N]" tab label, so repeating it above the table is noise. */}
       {query.trim() && (
         <p className="mb-3 shrink-0 text-[13.5px] text-ink-soft">
           {visible.length} of {items.length} loaded{" "}
@@ -146,8 +123,6 @@ export function ResponsesTab({
         </p>
       )}
 
-      {/* Fills the remaining height so the table's horizontal scrollbar sits at the
-          bottom of the card instead of the page growing a second scrollbar. */}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[12px] border border-line bg-canvas">
         <div className="scrollbar-slim min-h-0 flex-1 overflow-auto">
           <table className="w-full border-collapse text-left">
@@ -156,7 +131,6 @@ export function ResponsesTab({
                 <Th sticky className="min-w-[140px]">
                   <span className="flex items-center gap-2">
                     <ClockGlyph />
-                    {/* Wrapped, as the reference does, so the column stays narrow. */}
                     <span className="leading-tight">
                       Response
                       <br />
@@ -224,7 +198,6 @@ export function ResponsesTab({
                       </span>
                     </Td>
                     {questions.map((question) => {
-                      // Ids arrive as object keys, so they're strings here.
                       const value = item.answers[String(question.id)];
                       return (
                         <Td key={question.id} className="max-w-[300px]">
@@ -233,8 +206,6 @@ export function ResponsesTab({
                               –
                             </span>
                           ) : isChoiceType(question.type) ? (
-                            // Chosen options read as chips, distinguishing a picked
-                            // option from free text the respondent typed.
                             <span className="flex flex-wrap gap-1.5">
                               {value.split(", ").map((label, index) => (
                                 <span
@@ -278,14 +249,6 @@ export function ResponsesTab({
   );
 }
 
-/**
- * Header cell. Vertical rules match the reference's grid.
- *
- * Sticks to the top of the scroll container so the columns stay labelled through a
- * long list. The background has to be fully opaque — a translucent one lets the rows
- * show through as they scroll underneath. The timestamp header sticks on both axes,
- * so it needs to sit above its neighbours in the stack.
- */
 function Th({
   children,
   className,
@@ -323,8 +286,6 @@ function Td({
     <td
       className={cn(
         "border-r border-line-soft px-4 py-4 align-middle last:border-r-0",
-        // An opaque background is required on a sticky cell, or the scrolling
-        // columns show through underneath it.
         sticky && "sticky left-0 z-10 bg-canvas group-hover:bg-[#f4f3f5]",
         className,
       )}

@@ -4,13 +4,6 @@ import { motion } from "motion/react";
 
 import { Button } from "@/components/ui/Button";
 
-/**
- * Stand-in for the plan's monthly response allowance.
- *
- * The limit is a client-side constant because billing is out of scope; the
- * numerator is the real total across the creator's forms, so the bar reflects
- * actual data rather than being decorative.
- */
 const RESPONSE_LIMIT = 100;
 
 export function ResponseMeter({

@@ -57,22 +57,13 @@ def _ordered_questions(db: Session, form_id: int) -> list[Question]:
 
 
 def _renumber(questions: list[Question]) -> None:
-    """Rewrite positions to a dense 0..n-1 sequence.
-
-    Positions are always normalised after any structural change, so no gaps or
-    duplicates can accumulate and the frontend can treat position as an index.
-    """
+    """Rewrite positions to a dense 0..n-1 sequence."""
     for index, question in enumerate(questions):
         question.position = index
 
 
 def _sync_options(db: Session, question: Question, incoming: list[QuestionOptionIn]) -> None:
-    """Reconcile a question's options against the builder's list.
-
-    Options are matched by id and updated in place. Deleting and recreating them
-    would cascade away the ``answer_options`` rows of every response already
-    collected, silently destroying results data on a label typo fix.
-    """
+    """Reconcile a question's options against the builder's list."""
     existing = {option.id: option for option in question.options}
     seen: set[int] = set()
 
@@ -119,12 +110,7 @@ def create_question(db: Session, form: Form, payload: QuestionCreate) -> Questio
 
 
 def create_questions(db: Session, form: Form, payloads: list[QuestionCreate]) -> list[Question]:
-    """Append several questions in a single transaction.
-
-    One commit for the whole batch rather than per question: importing twenty
-    pasted titles should either all land or none of them should, and it avoids
-    twenty round trips from the builder.
-    """
+    """Append several questions in a single transaction."""
     siblings = _ordered_questions(db, form.id)
     created: list[Question] = []
 
@@ -140,7 +126,6 @@ def create_questions(db: Session, form: Form, payloads: list[QuestionCreate]) ->
         created.append(question)
 
     _renumber(siblings)
-    # Flushed before options so every question has an id to attach them to.
     db.flush()
 
     for question, payload in zip(created, payloads, strict=True):
@@ -158,8 +143,6 @@ def update_question(db: Session, question: Question, payload: QuestionUpdate) ->
     target_type = payload.type or question.type
 
     if target_type is not question.type:
-        # Answers are stored in columns specific to the old type, so a change
-        # would leave them unreadable. Refuse rather than orphan real data.
         if answer_count(db, question.id) > 0:
             raise QuestionTypeLocked(
                 "This question already has answers, so its type can no longer be changed. "
@@ -176,8 +159,6 @@ def update_question(db: Session, question: Question, payload: QuestionUpdate) ->
     if target_type in CHOICE_TYPES:
         _sync_options(db, question, payload.options)
     else:
-        # Switching away from a choice type leaves options that nothing can
-        # reference; drop them so the question isn't carrying dead rows.
         for option in list(question.options):
             db.delete(option)
 
@@ -197,12 +178,7 @@ def delete_question(db: Session, question: Question) -> None:
 
 
 def reorder_questions(db: Session, form: Form, question_ids: list[int]) -> list[Question]:
-    """Apply a new ordering given the complete list of question ids.
-
-    The payload must be a permutation of the form's questions: accepting a
-    partial list would leave the remaining positions ambiguous, and silently
-    ignoring unknown ids would hide a stale-client bug.
-    """
+    """Apply a new ordering given the complete list of question ids."""
     questions = {question.id: question for question in _ordered_questions(db, form.id)}
 
     if len(question_ids) != len(questions) or set(question_ids) != set(questions):

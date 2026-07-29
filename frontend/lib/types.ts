@@ -1,11 +1,3 @@
-/**
- * Types mirroring the backend's Pydantic schemas.
- *
- * Hand-written rather than generated from the OpenAPI document: the surface is
- * small enough that a generator would add a build step for no real benefit, and
- * these read better at call sites. They must stay in step with
- * `backend/app/schemas/`.
- */
 
 export type FormStatus = "draft" | "published";
 
@@ -54,7 +46,6 @@ export interface FormTheme {
   font_family: string;
 }
 
-/** Dashboard list row. */
 export interface FormSummary {
   id: number;
   title: string;
@@ -66,11 +57,9 @@ export interface FormSummary {
   question_count: number;
   response_count: number;
   public_url: string | null;
-  /** True when a live form has been edited since it was last published. */
   has_unpublished_edits: boolean;
 }
 
-/** Full definition used by the builder. */
 export interface FormDetail extends FormSummary {
   show_welcome_screen: boolean;
   welcome_heading: string;
@@ -82,12 +71,6 @@ export interface FormDetail extends FormSummary {
   theme: FormTheme;
 }
 
-/**
- * The respondent-facing projection of a form.
- *
- * Deliberately narrower than `FormDetail`: no id, no status, no counts, no
- * timestamps — nothing a respondent has no business seeing.
- */
 export interface PublicForm {
   slug: string;
   title: string;
@@ -101,7 +84,6 @@ export interface PublicForm {
   theme: FormTheme;
 }
 
-/** One submitted answer. The server validates `value` against the question type. */
 export interface AnswerSubmission {
   question_id: number;
   value: string | number | boolean | number[] | null;
@@ -119,24 +101,17 @@ export interface ResponseCreated {
   thank_you_description: string;
 }
 
-/** A single server-side validation failure, addressed by question. */
 export interface FieldIssue {
   question_id: number;
   message: string;
 }
 
-/* --------------------------------------------------------------------------- */
-/* Results                                                                     */
-/* --------------------------------------------------------------------------- */
-
-/** One row of the responses table. `answers` is keyed by question id. */
 export interface ResponseListItem {
   id: number;
   token: string;
   is_complete: boolean;
   submitted_at: string | null;
   duration_seconds: number | null;
-  /** JSON object keys are strings, so question ids arrive stringified. */
   answers: Record<string, string>;
 }
 
@@ -147,12 +122,6 @@ export interface ResponsePage {
   items: ResponseListItem[];
 }
 
-/**
- * A stored answer, flattened for display.
- *
- * `display_value` is the server's single rendering of the answer, shared by the
- * table, this detail view and the CSV export so the three can't disagree.
- */
 export interface AnswerOut {
   question_id: number;
   question_title: string;
@@ -188,7 +157,6 @@ export interface RatingBucket {
   count: number;
 }
 
-/** Per-question aggregate. Only the fields relevant to the type are populated. */
 export interface QuestionSummary {
   question_id: number;
   type: QuestionType;
@@ -222,13 +190,6 @@ export interface Creator {
   name: string;
 }
 
-/**
- * Body for creating or updating a question.
- *
- * `type` is optional on update: omitting it keeps the current type, and sending a
- * different one is accepted only while the question has no answers (otherwise the
- * API returns 409, since answers live in columns specific to the old type).
- */
 export interface QuestionPayload {
   type?: QuestionType;
   title: string;
@@ -248,13 +209,6 @@ export interface QuestionPayload {
 
 export interface FormUpdatePayload {
   title?: string;
-  /**
-   * The public link's path segment.
-   *
-   * Changing it rewrites the shareable URL and takes the previous one offline at
-   * once. Collected responses are unaffected — they reference the form's id.
-   * The API answers 409 if another form already uses it.
-   */
   slug?: string;
   show_welcome_screen?: boolean;
   welcome_heading?: string;

@@ -15,7 +15,6 @@ interface Tab {
   id: string;
   label: string;
   icon: React.ReactNode;
-  /** Tabs without an implementation open the placeholder dialog. */
   available?: boolean;
   badge?: string;
 }
@@ -45,8 +44,6 @@ export function NavTabs() {
   return (
     <>
       <nav
-        // Scrolls sideways rather than wrapping or clipping: four tabs plus a
-        // badge do not fit at 375px, and a second row would push the list down.
         className="scrollbar-slim flex h-[46px] shrink-0 items-end gap-1 overflow-x-auto overflow-y-hidden border-b border-line bg-workspace px-3 whitespace-nowrap sm:px-5"
         aria-label="Sections"
       >
@@ -96,8 +93,6 @@ function TabButton({
         </span>
       )}
 
-      {/* Sits on the nav's bottom border rather than under it, so the active
-          tab's indicator visually replaces that segment of the line. */}
       {active && (
         <span className="absolute inset-x-0 -bottom-px h-[2.5px] rounded-full bg-ink" />
       )}

@@ -1,14 +1,4 @@
-"""Populate the database with demo content.
-
-Run after migrations:
-
-    python -m app.seed
-
-Responses are inserted through :func:`app.services.response_service.submit_response`
-rather than written directly, so seeding exercises the same validation path a real
-respondent hits — a schema or validation regression fails the seed loudly instead
-of quietly producing unreachable data.
-"""
+"""Populate the database with demo content."""
 
 from __future__ import annotations
 
@@ -38,17 +28,11 @@ from app.schemas.question import QuestionCreate, QuestionOptionIn
 from app.schemas.response import AnswerIn, ResponseSubmit
 from app.services import form_service, response_service
 
-#: Fixed so repeated seeding produces the same demo data.
 RNG = random.Random(20260728)
 
 
 def _options(*labels: str) -> list[QuestionOptionIn]:
     return [QuestionOptionIn(label=label) for label in labels]
-
-
-# --------------------------------------------------------------------------- #
-# Form definitions
-# --------------------------------------------------------------------------- #
 
 SATISFACTION_QUESTIONS = [
     QuestionCreate(
@@ -187,11 +171,6 @@ APPLICATION_QUESTIONS = [
     ),
 ]
 
-
-# --------------------------------------------------------------------------- #
-# Response fixtures
-# --------------------------------------------------------------------------- #
-
 NAMES = [
     "Priya Sharma", "Marcus Webb", "Chloe Dubois", "Ravi Menon", "Hannah Kim",
     "Diego Santos", "Amara Okafor", "Tomas Novak", "Leila Haddad", "Ben Whitfield",
@@ -233,7 +212,6 @@ def _satisfaction_answers(form: Form, index: int) -> list[AnswerIn]:
         AnswerIn(question_id=q[3].id, value=used),
         AnswerIn(
             question_id=q[4].id,
-            # Left blank sometimes, so the summary shows a real skipped count.
             value=RNG.choice([option.id for option in q[4].options] + [None]),
         ),
         AnswerIn(question_id=q[5].id, value=RNG.choices([True, False], weights=[9, 2])[0]),
@@ -252,18 +230,8 @@ def _product_answers(form: Form, index: int) -> list[AnswerIn]:
     ]
 
 
-# --------------------------------------------------------------------------- #
-# Seeding
-# --------------------------------------------------------------------------- #
-
-
 def _wipe(db: Session) -> None:
-    """Remove existing demo data, children first.
-
-    Explicit deletes in dependency order rather than dropping tables, so the
-    schema stays exactly as Alembic left it and the migration history is not
-    bypassed.
-    """
+    """Remove existing demo data, children first."""
     db.execute(delete(answer_options))
     for model in (Answer, Response, QuestionOption, Question, FormTheme, Form, User):
         db.execute(delete(model))
@@ -294,7 +262,6 @@ def _backdate(db: Session, form: Form, days_ago: int) -> None:
 
 
 def seed() -> None:
-    # Safety net for a fresh checkout where migrations have not been run yet.
     Base.metadata.create_all(bind=engine)
 
     with SessionLocal() as db:
@@ -306,8 +273,6 @@ def seed() -> None:
             db,
             satisfaction,
             FormUpdate(
-                # Enabled explicitly: new forms have no welcome screen until the
-                # creator adds one, so the demo data has to opt in.
                 show_welcome_screen=True,
                 welcome_heading="How are we doing?",
                 welcome_description="Six quick questions — about two minutes.",
@@ -340,7 +305,6 @@ def seed() -> None:
         )
         form_service.set_published(db, product, True)
 
-        # Left as a draft so the dashboard shows both statuses.
         _create(db, owner, "Job Application — Frontend Engineer", APPLICATION_QUESTIONS)
 
         for index in range(12):
@@ -371,8 +335,7 @@ def seed() -> None:
 
 
 def _report(forms: list, email: str) -> None:
-    """Print a seeding summary. Kept ASCII-only: the default Windows console
-    code page (cp1252) raises UnicodeEncodeError on characters like arrows."""
+    """Print a seeding summary. Kept ASCII-only: the default Windows console"""
     print(f"Seeded {len(forms)} forms for {email}:")
     for summary in forms:
         link = summary.public_url or "(draft - not published)"
@@ -384,12 +347,7 @@ def _report(forms: list, email: str) -> None:
 
 
 def seed_if_empty() -> bool:
-    """Seed only when the database holds no forms. Returns whether it seeded.
-
-    This is what runs on deploy. :func:`seed` deletes everything first, so calling
-    it unconditionally at container start would wipe real responses on every
-    redeploy — exactly the data the brief requires to persist.
-    """
+    """Seed only when the database holds no forms. Returns whether it seeded."""
     Base.metadata.create_all(bind=engine)
 
     with SessionLocal() as db:
@@ -402,9 +360,7 @@ def seed_if_empty() -> bool:
     seed()
     return True
 
-
 if __name__ == "__main__":
-    # `--if-empty` is for deploys; a bare run is the destructive local reset.
     if "--if-empty" in sys.argv:
         seed_if_empty()
     else:

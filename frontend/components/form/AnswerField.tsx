@@ -8,7 +8,6 @@ import { ChevronDown, Search } from "@/components/ui/Icons";
 import { cn } from "@/lib/format";
 import type { FormTheme, Question } from "@/lib/types";
 
-/** The value shape an answer can take, matching what the API accepts. */
 export type AnswerValue = string | number | boolean | number[] | null;
 
 interface AnswerFieldProps {
@@ -16,20 +15,11 @@ interface AnswerFieldProps {
   value: AnswerValue;
   onChange: (value: AnswerValue) => void;
   theme: FormTheme;
-  /** Non-interactive rendering for the builder canvas. */
   disabled?: boolean;
   autoFocus?: boolean;
   onSubmit?: () => void;
 }
 
-/**
- * Renders the input for one question.
- *
- * Deliberately knows nothing about navigation, progress or transitions — those
- * belong to whatever is driving it. That separation is what lets the builder
- * canvas, the live preview and the public respondent flow all render answers
- * through this one component instead of maintaining three copies of eight types.
- */
 export function AnswerField({
   question,
   value,
@@ -41,7 +31,6 @@ export function AnswerField({
 }: AnswerFieldProps) {
   const { answer_color: answerColor, button_color: buttonColor } = theme;
 
-  /** Enter submits, except in a long-text field where it should insert a newline. */
   const submitOnEnter = (event: React.KeyboardEvent) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
@@ -87,7 +76,6 @@ export function AnswerField({
           value={value === null || value === undefined ? "" : String(value)}
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={(event) => {
-            // Shift+Enter is a newline; plain Enter advances, matching Typeform.
             if (event.key === "Enter" && !event.shiftKey) {
               event.preventDefault();
               onSubmit?.();
@@ -218,19 +206,6 @@ export function AnswerField({
   }
 }
 
-/**
- * Themed dropdown — a searchable combobox.
- *
- * A native `<select>` renders its list through the operating system, so the form's
- * theme cannot reach it: on a dark theme you get a light OS menu. This is a
- * combobox instead, which also gets the type-to-filter behaviour a `<select>`
- * can't offer — the point of a dropdown over multiple choice is that the list may
- * be long enough to need searching.
- *
- * Unlike the other choice types this deliberately drops the A/B/C key badges.
- * Those exist so a respondent can pick with one keypress, which stops being true
- * once the visible list is a filtered subset and the letters no longer line up.
- */
 function DropdownField({
   question,
   value,
@@ -250,8 +225,6 @@ function DropdownField({
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  // -1 so the freshly opened list shows no row as pre-picked. Typing moves it to
-  // the first match, which is what makes Enter select the obvious candidate.
   const [highlight, setHighlight] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
@@ -265,9 +238,6 @@ function DropdownField({
     ? question.options.filter((option) => option.label.toLowerCase().includes(needle))
     : question.options;
 
-  // Clamped on read rather than corrected in an effect: filtering can shrink the
-  // list under a stale index, and an effect that calls setState to fix it would
-  // render one frame with the highlight out of bounds.
   const activeIndex =
     matches.length && highlight >= 0 ? Math.min(highlight, matches.length - 1) : -1;
   const activeOption = activeIndex >= 0 ? matches[activeIndex] : null;
@@ -281,15 +251,12 @@ function DropdownField({
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, [open]);
 
-  // Keeps the keyboard-highlighted row visible without scrolling the page.
   useEffect(() => {
     if (!open || activeIndex < 0) return;
     listRef.current?.children[activeIndex]?.scrollIntoView({ block: "nearest" });
   }, [open, activeIndex]);
 
   const choose = (optionId: number) => {
-    // Always selects rather than toggling: re-picking the row you already chose
-    // should not silently empty a dropdown.
     onChange([optionId]);
     setQuery("");
     setHighlight(-1);
@@ -309,7 +276,6 @@ function DropdownField({
     }
     if (event.key === "Enter") {
       event.preventDefault();
-      // An open list means Enter is picking an option, not answering the question.
       if (open && activeOption) {
         choose(activeOption.id);
         return;
@@ -318,19 +284,12 @@ function DropdownField({
       return;
     }
     if (event.key === "Escape" && open) {
-      // Marks the key handled so the preview or respondent flow doesn't also act
-      // on it and close itself out from under someone who only meant to shut the
-      // list. preventDefault is what those handlers check — stopPropagation alone
-      // cannot reach a listener attached to the same node. Escape has no default
-      // action worth preserving here.
       event.preventDefault();
       event.stopPropagation();
       setOpen(false);
     }
   };
 
-  // The canvas renders a non-interactive stand-in: a closed control with a
-  // chevron, matching how the builder shows every other field type.
   if (disabled) {
     return (
       <div className="w-full max-w-[680px]">
@@ -365,8 +324,6 @@ function DropdownField({
           aria-label={question.title || "Your answer"}
           autoComplete="off"
           autoFocus={autoFocus}
-          // Shows the chosen label while closed, and the live query while open, so
-          // opening the list never looks like it wiped the answer.
           value={open ? query : selected ? selected.label || "Choice" : ""}
           placeholder={question.placeholder || "Type or select an option"}
           onFocus={() => setOpen(true)}
@@ -419,16 +376,8 @@ function DropdownField({
                   >
                     <button
                       type="button"
-                      // The list is dismissed on pointerdown elsewhere, so the
-                      // press must not first move focus off the input.
                       onMouseDown={(event) => event.preventDefault()}
                       onClick={() => choose(option.id)}
-                      // mousemove, not mouseenter: opening the panel grows the
-                      // step, which re-centres it and slides rows under a
-                      // stationary cursor. mouseenter fires on that and would
-                      // pre-highlight whichever row happened to land under the
-                      // pointer — one Enter away from picking it. A layout shift
-                      // does not produce a mousemove.
                       onMouseMove={() => setHighlight(index)}
                       className="flex w-full cursor-pointer items-center rounded-[8px] px-4 py-3 text-left text-[17px] transition-colors duration-100"
                       style={{

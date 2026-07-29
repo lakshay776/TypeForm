@@ -28,17 +28,17 @@ def _load(db: DbSession, form_id: int, question_id: int):
 
 
 @router.get("", response_model=list[QuestionOut], summary="List a form's questions in order")
+
 def list_questions(form: OwnedForm) -> list[QuestionOut]:
     return form.questions
 
 
-# Declared before "/{question_id}" so the literal path is matched first rather
-# than being parsed as a question id.
 @router.put(
     "/reorder",
     response_model=list[QuestionOut],
     summary="Reorder questions (drag and drop)",
 )
+
 def reorder_questions(db: DbSession, form: OwnedForm, payload: QuestionReorder) -> list[QuestionOut]:
     try:
         return question_service.reorder_questions(db, form, payload.question_ids)
@@ -52,6 +52,7 @@ def reorder_questions(db: DbSession, form: OwnedForm, payload: QuestionReorder) 
     status_code=status.HTTP_201_CREATED,
     summary="Append several questions at once (used by Import questions)",
 )
+
 def create_questions(
     db: DbSession, form: OwnedForm, payload: QuestionBulkCreate
 ) -> list[QuestionOut]:
@@ -64,6 +65,7 @@ def create_questions(
     status_code=status.HTTP_201_CREATED,
     summary="Add a question",
 )
+
 def create_question(db: DbSession, form: OwnedForm, payload: QuestionCreate) -> QuestionOut:
     return question_service.create_question(db, form, payload)
 
@@ -74,6 +76,7 @@ def create_question(db: DbSession, form: OwnedForm, payload: QuestionCreate) -> 
     responses={409: {"description": "The question's type is locked by existing answers"}},
     summary="Update a question",
 )
+
 def update_question(
     db: DbSession,
     form: OwnedForm,
@@ -94,6 +97,7 @@ def update_question(
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a question",
 )
+
 def delete_question(
     db: DbSession, form: OwnedForm, question_id: Annotated[int, Path(ge=1)]
 ) -> Response:

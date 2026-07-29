@@ -8,22 +8,7 @@ from app.schemas.common import ORMModel, RequestModel
 
 
 class AnswerIn(RequestModel):
-    """One submitted answer.
-
-    ``value`` is intentionally untyped at the schema layer. Coercing it here
-    would mean Pydantic decides what "not a number" looks like, and its error
-    text is not something a respondent should ever read. Instead the value is
-    validated against the question's own type and settings in
-    :mod:`app.services.answer_validation`, which owns the respondent-facing
-    messages. Accepted shapes per type:
-
-    * ``short_text`` / ``long_text`` / ``email`` — string
-    * ``number`` — number, or a numeric string
-    * ``yes_no`` — boolean
-    * ``rating`` — integer between 1 and the question's ``rating_max``
-    * ``multiple_choice`` / ``dropdown`` — an option id, or a list of option ids
-    * skipped (optional question) — ``null``, ``""`` or ``[]``
-    """
+    """One submitted answer."""
 
     question_id: int
     value: Any = None
@@ -31,7 +16,6 @@ class AnswerIn(RequestModel):
 
 class ResponseSubmit(RequestModel):
     answers: list[AnswerIn] = Field(default_factory=list)
-    #: Client-reported fill duration, surfaced in the results view.
     duration_seconds: Optional[int] = Field(default=None, ge=0, le=86_400)
 
 
@@ -45,12 +29,7 @@ class ResponseCreated(BaseModel):
 
 
 class AnswerOut(BaseModel):
-    """A stored answer, flattened for display.
-
-    ``display_value`` is the single human-readable rendering used by the results
-    table, the individual-response view and the CSV export, so those three never
-    disagree about how an answer reads.
-    """
+    """A stored answer, flattened for display."""
 
     question_id: int
     question_title: str
@@ -70,7 +49,6 @@ class ResponseListItem(ORMModel):
     is_complete: bool
     submitted_at: Optional[datetime]
     duration_seconds: Optional[int]
-    #: Answers keyed by question id, so the table can render one column per question.
     answers: dict[int, str] = Field(default_factory=dict)
 
 
@@ -122,7 +100,6 @@ class QuestionSummary(BaseModel):
     minimum: Optional[float] = None
     maximum: Optional[float] = None
     rating_distribution: Optional[list[RatingBucket]] = None
-    #: Most recent free-text answers, for text and email questions.
     recent_answers: Optional[list[str]] = None
 
 

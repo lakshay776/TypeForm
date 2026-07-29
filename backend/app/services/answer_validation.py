@@ -1,9 +1,4 @@
-"""Server-side validation of submitted answers.
-
-The respondent UI validates the same rules client-side for instant feedback, but
-this module is the authority: a form can be submitted with a crafted request, and
-the messages produced here are written to be shown directly to a respondent.
-"""
+"""Server-side validation of submitted answers."""
 
 from dataclasses import dataclass, field
 from typing import Any, Optional
@@ -17,11 +12,11 @@ from app.schemas.response import AnswerIn
 REQUIRED_MESSAGE = "Please fill this in"
 REQUIRED_CHOICE_MESSAGE = "Please make a selection"
 
-#: Types whose answer is chosen by clicking rather than typed.
 SELECTION_TYPES = CHOICE_TYPES | {QuestionType.YES_NO, QuestionType.RATING}
 
 
 @dataclass
+
 class AnswerDraft:
     """A validated answer, not yet attached to a response row."""
 
@@ -34,6 +29,7 @@ class AnswerDraft:
 
 
 @dataclass
+
 class ValidationResult:
     drafts: list[AnswerDraft] = field(default_factory=list)
     issues: list[FieldIssue] = field(default_factory=list)
@@ -64,7 +60,6 @@ def _as_option_ids(value: Any) -> Optional[list[int]]:
             ids.append(int(item))
         except (TypeError, ValueError):
             return None
-    # Preserve order while dropping duplicates.
     return list(dict.fromkeys(ids))
 
 
@@ -147,12 +142,9 @@ def _validate_choice(question: Question, value: Any) -> tuple[Optional[AnswerDra
 
     valid_ids = {option.id for option in question.options}
     if not set(ids).issubset(valid_ids):
-        # Only reachable from a stale client or a crafted request: the option was
-        # deleted from the form after the respondent loaded it.
         return None, "That option is no longer available — please choose again"
 
     return AnswerDraft(question_id=question.id, option_ids=ids), None
-
 
 _VALIDATORS = {
     QuestionType.NUMBER: _validate_number,
@@ -166,12 +158,7 @@ def _pretty(number: float) -> str:
 
 
 def validate_submission(form: Form, submitted: list[AnswerIn]) -> ValidationResult:
-    """Validate every answer against its question, driven by the form definition.
-
-    Iterating over the form's questions rather than the submitted answers is what
-    makes missing required answers detectable, and it means unknown or duplicate
-    question ids in the payload cannot influence what gets stored.
-    """
+    """Validate every answer against its question, driven by the form definition."""
     result = ValidationResult()
     by_id = {question.id: question for question in form.questions}
 
@@ -181,7 +168,6 @@ def validate_submission(form: Form, submitted: list[AnswerIn]) -> ValidationResu
             FieldIssue(question_id=question_id, message="This question is not part of the form")
         )
 
-    # Last write wins if a client sends the same question twice.
     values = {answer.question_id: answer.value for answer in submitted}
 
     for question in form.questions:
@@ -189,17 +175,12 @@ def validate_submission(form: Form, submitted: list[AnswerIn]) -> ValidationResu
 
         if _is_empty(value):
             if question.is_required:
-                # Types answered by clicking rather than typing get "make a
-                # selection": telling someone to "fill this in" when the control
-                # is a row of stars reads as the wrong instruction.
                 message = (
                     REQUIRED_CHOICE_MESSAGE
                     if question.type in SELECTION_TYPES
                     else REQUIRED_MESSAGE
                 )
                 result.issues.append(FieldIssue(question_id=question.id, message=message))
-            # An empty optional answer is a skip: no row is written, which keeps
-            # "skipped" and "answered with an empty string" distinguishable in stats.
             continue
 
         if question.type in TEXT_TYPES:

@@ -16,7 +16,6 @@ import { ComingSoonModal } from "@/components/ui/Modal";
 import { cn } from "@/lib/format";
 import type { Creator } from "@/lib/types";
 
-/** "Alex Morgan" -> "AM"; falls back to the email's first letter. */
 function initials(creator: Creator | null): string {
   if (!creator) return "–";
   const parts = creator.name.trim().split(/\s+/).filter(Boolean);
@@ -24,7 +23,6 @@ function initials(creator: Creator | null): string {
   return (parts[0]?.[0] ?? creator.email[0]).toUpperCase();
 }
 
-/** Typeform shows the account handle rather than the display name here. */
 function handle(creator: Creator | null): string {
   return creator ? creator.email.split("@")[0] : "…";
 }
@@ -34,7 +32,6 @@ export function TopBar({
   onToggleNav,
 }: {
   creator: Creator | null;
-  /** Opens the sidebar drawer. Only rendered below lg, where the rail is hidden. */
   onToggleNav?: () => void;
 }) {
   const [placeholder, setPlaceholder] = useState<string | null>(null);
@@ -112,9 +109,6 @@ export function TopBar({
           </Dropdown>
         </div>
 
-        {/* Everything here is a placeholder except the avatar, so the narrow
-            layout drops them in order of least use rather than trying to squeeze
-            all five onto a phone. */}
         <div className="flex shrink-0 items-center gap-1">
           <span className="hidden lg:flex lg:items-center lg:gap-1">
             <TopBarLink

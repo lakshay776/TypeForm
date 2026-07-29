@@ -12,7 +12,6 @@ import { AUTO_ADVANCE_MS, advancesOnSelect } from "@/lib/questionTypes";
 import type { DeviceMode } from "@/components/builder/CanvasToolbar";
 import type { FormDetail } from "@/lib/types";
 
-/** Steps are the welcome screen (optional), each question, then the ending. */
 type Step = { kind: "welcome" } | { kind: "question"; index: number } | { kind: "ending" };
 
 interface PreviewModalProps {
@@ -22,33 +21,14 @@ interface PreviewModalProps {
   device: DeviceMode;
 }
 
-/**
- * Live preview of the form as a respondent would move through it.
- *
- * Answers are held in local state and never submitted — this is the builder's
- * preview, not the public flow. It reuses `AnswerField`, so what is previewed here
- * is rendered by the same code that will render the real thing.
- */
 export function PreviewModal({ open, onClose, form, device }: PreviewModalProps) {
   return (
     <AnimatePresence>
-      {/* Everything below only exists while the preview is open, so each launch
-          starts from the first step with no answers and with the device the
-          builder toolbar was set to — no effects needed to reset any of it. */}
       {open && <PreviewShell form={form} initialDevice={device} onClose={onClose} />}
     </AnimatePresence>
   );
 }
 
-/**
- * Full-screen chrome around a preview run: the floating control pill, the device
- * frame, and the restart control.
- *
- * Restart works by remounting `PreviewRun` under a new key rather than by
- * clearing its state field by field. The run owns cursor, answers, direction,
- * error and shake — resetting five things by hand is five chances to forget one,
- * and a fresh mount is the same code path a first launch takes.
- */
 function PreviewShell({
   form,
   initialDevice,
@@ -152,14 +132,11 @@ function PreviewRun({ form, onClose }: { form: FormDetail; onClose: () => void }
   const [cursor, setCursor] = useState(0);
   const [answers, setAnswers] = useState<Record<number, AnswerValue>>({});
   const [direction, setDirection] = useState<1 | -1>(1);
-  /** Validation message for the question on screen, or null when it passes. */
   const [error, setError] = useState<string | null>(null);
-  /** Bumped on each rejection so the field can re-run its shake animation. */
   const [shake, setShake] = useState(0);
 
   const step = steps[Math.min(cursor, steps.length - 1)];
 
-  /** Pending auto-advance, so a second choice cancels the first one's timer. */
   const advanceTimer = useRef<number | null>(null);
   const cancelAutoAdvance = useCallback(() => {
     if (advanceTimer.current !== null) {
@@ -168,18 +145,12 @@ function PreviewRun({ form, onClose }: { form: FormDetail; onClose: () => void }
     }
   }, []);
 
-  // Clears a pending advance if the preview closes or restarts mid-countdown, so
-  // no timer fires against a run that no longer exists.
   useEffect(() => cancelAutoAdvance, [cancelAutoAdvance]);
 
   const go = useCallback(
     (delta: 1 | -1) => {
-      // Moving by hand supersedes a pending auto-advance, or the timer would fire
-      // again a step later and skip a question.
       cancelAutoAdvance();
 
-      // Going back never validates: a respondent must always be able to return to
-      // a previous question, including one they left incomplete.
       if (delta === 1 && step.kind === "question") {
         const question = form.questions[step.index];
         const message = validateAnswer(question, answers[question.id] ?? null);
@@ -200,13 +171,8 @@ function PreviewRun({ form, onClose }: { form: FormDetail; onClose: () => void }
     (questionId: number, value: AnswerValue) => {
       cancelAutoAdvance();
       setAnswers((current) => ({ ...current, [questionId]: value }));
-      // Clear the message as soon as the respondent starts fixing it, rather than
-      // making them press OK again to find out whether they have.
       setError(null);
 
-      // Choice types answer themselves, so waiting for OK is a pointless keypress.
-      // Mirrors the public flow, using the same delay and the same rule — a preview
-      // that advanced at a different moment than the real form would be misleading.
       if (step.kind !== "question") return;
       const question = form.questions[step.index];
       if (question.id !== questionId) return;
@@ -224,18 +190,12 @@ function PreviewRun({ form, onClose }: { form: FormDetail; onClose: () => void }
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      // See the matching guard in FormRunner: a field that consumed this key marks
-      // it handled, and defaultPrevented is the only signal that survives both
-      // listeners being attached to `document`. Without it, Escape aimed at an
-      // open dropdown would also tear down the whole preview.
       if (event.defaultPrevented) return;
 
       if (event.key === "Escape") {
         onClose();
         return;
       }
-      // Arrow navigation is skipped while typing, or ↓ inside a textarea would
-      // jump to the next question instead of moving the caret.
       const target = event.target as HTMLElement | null;
       const typing =
         target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.tagName === "SELECT";
@@ -247,8 +207,6 @@ function PreviewRun({ form, onClose }: { form: FormDetail; onClose: () => void }
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [onClose, go]);
 
-  // Uses the same emptiness rule as validation, so `false` (a "No" answer) and
-  // `0` count as answered rather than being treated as blanks.
   const answeredCount = form.questions.filter(
     (question) => !isEmptyAnswer(answers[question.id] ?? null),
   ).length;
@@ -265,7 +223,6 @@ function PreviewRun({ form, onClose }: { form: FormDetail; onClose: () => void }
             aria-label="Form preview"
             className="relative flex h-full w-full flex-col overflow-hidden"
           >
-            {/* Progress bar */}
             <div className="absolute inset-x-0 top-0 z-10 h-[3px] bg-black/10">
               <motion.div
                 className="h-full"
@@ -286,9 +243,6 @@ function PreviewRun({ form, onClose }: { form: FormDetail; onClose: () => void }
                   transition={{ duration: 0.34, ease: [0.16, 1, 0.3, 1] }}
                   className="absolute inset-0 flex flex-col justify-center overflow-y-auto px-8 py-20 sm:px-16"
                 >
-                  {/* The same three screens the public form renders — see
-                      components/form/Screens.tsx for why they are not duplicated
-                      here any more. */}
                   {step.kind === "welcome" && (
                     <WelcomeScreen form={form} onStart={() => go(1)} />
                   )}
@@ -319,7 +273,6 @@ function PreviewRun({ form, onClose }: { form: FormDetail; onClose: () => void }
               </AnimatePresence>
             </div>
 
-            {/* Step controls */}
             <div className="absolute right-5 bottom-5 z-10 flex overflow-hidden rounded-[7px]">
               <button
                 type="button"

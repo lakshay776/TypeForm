@@ -17,10 +17,6 @@ import type {
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-/**
- * Error carrying the HTTP status so callers can branch on it — a 404 on a form
- * means "show not found", a 422 means "show validation issues".
- */
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -54,13 +50,9 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       signal,
       headers: body === undefined ? undefined : { "Content-Type": "application/json" },
       body: body === undefined ? undefined : JSON.stringify(body),
-      // The dashboard always wants the current state of the creator's forms;
-      // Next would otherwise cache these on the server.
       cache: "no-store",
     });
   } catch (cause) {
-    // fetch only rejects on network failure, so this is genuinely "backend
-    // unreachable" rather than an error response — worth its own message.
     if ((cause as Error)?.name === "AbortError") throw cause;
     throw new ApiError(0, "Can't reach the server. Is the backend running?", cause);
   }
@@ -84,7 +76,6 @@ function safeJson(text: string): unknown {
   }
 }
 
-/** FastAPI reports errors as `detail`, which is a string or a list of issues. */
 function extractMessage(body: unknown): string | undefined {
   if (typeof body !== "object" || body === null) return undefined;
   const detail = (body as { detail?: unknown }).detail;
@@ -105,13 +96,6 @@ export const api = {
 
     get: (id: number) => request<FormDetail>(`/forms/${id}`),
 
-    /**
-     * Creates a form, optionally with its questions in the same request.
-     *
-     * Sending the starter question here rather than as a follow-up POST means a
-     * new form is never briefly questionless — so the builder cannot flash an
-     * empty state before its first question appears.
-     */
     create: (payload: { title?: string; questions?: QuestionPayload[] } = {}) =>
       request<FormDetail>("/forms", { method: "POST", body: payload }),
 
@@ -132,7 +116,6 @@ export const api = {
     create: (formId: number, payload: QuestionPayload & { position?: number }) =>
       request<Question>(`/forms/${formId}/questions`, { method: "POST", body: payload }),
 
-    /** Appends several questions in one request; always appends, in order. */
     createMany: (formId: number, questions: QuestionPayload[]) =>
       request<Question[]>(`/forms/${formId}/questions/bulk`, {
         method: "POST",
@@ -148,7 +131,6 @@ export const api = {
     remove: (formId: number, questionId: number) =>
       request<void>(`/forms/${formId}/questions/${questionId}`, { method: "DELETE" }),
 
-    /** Takes the complete list of ids; the API rejects a partial ordering. */
     reorder: (formId: number, questionIds: number[]) =>
       request<Question[]>(`/forms/${formId}/questions/reorder`, {
         method: "PUT",
@@ -157,7 +139,6 @@ export const api = {
   },
 
   results: {
-    /** Per-question aggregates for the Summary tab. */
     summary: (formId: number) => request<FormStats>(`/forms/${formId}/summary`),
 
     responses: (formId: number, params: { limit?: number; offset?: number } = {}) =>
@@ -167,9 +148,7 @@ export const api = {
       request<ResponseDetail>(`/forms/${formId}/responses/${responseId}`),
   },
 
-  /** Unauthenticated endpoints backing the respondent flow. */
   public: {
-    /** Published forms only; an unpublished or unknown slug both 404. */
     form: (slug: string) => request<PublicForm>(`/public/forms/${slug}`),
 
     submit: (slug: string, payload: ResponseSubmission) =>
@@ -180,13 +159,6 @@ export const api = {
   },
 };
 
-/**
- * Per-question messages from a rejected submission, keyed by question id.
- *
- * The submit endpoint answers a 422 with `{ detail, issues[] }` rather than one
- * message, because several answers can be wrong at once and the flow needs to
- * jump the respondent back to the first offending question.
- */
 export function answerIssues(cause: unknown): Record<number, string> {
   if (!(cause instanceof ApiError) || cause.status !== 422) return {};
   const body = cause.body as { issues?: unknown } | undefined;
@@ -201,13 +173,6 @@ export function answerIssues(cause: unknown): Record<number, string> {
   return issues;
 }
 
-/**
- * The list of reasons a publish attempt was refused, if that is what failed.
- *
- * The publish endpoint returns `{ detail, problems }` with a 422 rather than a
- * single message, because a half-built form usually has more than one thing
- * missing and fixing them one round trip at a time is miserable.
- */
 export function publishProblems(cause: unknown): string[] {
   if (!(cause instanceof ApiError) || cause.status !== 422) return [];
   const body = cause.body as { problems?: unknown } | undefined;
@@ -215,7 +180,6 @@ export function publishProblems(cause: unknown): string[] {
   return body.problems.filter((item): item is string => typeof item === "string");
 }
 
-/** Absolute URL of the CSV export, used as a plain download link. */
 export function exportUrl(formId: number): string {
   return `${BASE_URL}/api/forms/${formId}/responses/export`;
 }

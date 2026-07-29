@@ -22,10 +22,6 @@ if TYPE_CHECKING:
     from app.models.form import Form
     from app.models.question import Question, QuestionOption
 
-
-#: Join table between an answer and the options it selected. Modelled as a bare
-#: association table because it carries no data of its own; the composite primary
-#: key also prevents the same option being recorded twice for one answer.
 answer_options = Table(
     "answer_options",
     Base.metadata,
@@ -39,12 +35,7 @@ def _new_token() -> str:
 
 
 class Response(Base):
-    """One respondent's submission for a form.
-
-    Rows are created on submit. ``is_complete`` exists so partial-response
-    tracking can be layered on by writing rows as the respondent advances,
-    without a schema change.
-    """
+    """One respondent's submission for a form."""
 
     __tablename__ = "responses"
 
@@ -53,8 +44,6 @@ class Response(Base):
         ForeignKey("forms.id", ondelete="CASCADE"), index=True, nullable=False
     )
 
-    #: Opaque public identifier handed back to the respondent, so a response is
-    #: never addressed by a guessable sequential id from outside.
     token: Mapped[str] = mapped_column(
         String(32), unique=True, index=True, default=_new_token, nullable=False
     )
@@ -67,7 +56,6 @@ class Response(Base):
         DateTime(timezone=True), default=None, index=True
     )
 
-    #: Rough completion time in seconds, reported by the client.
     duration_seconds: Mapped[Optional[int]] = mapped_column(Integer, default=None)
     user_agent: Mapped[str] = mapped_column(String(400), default="", nullable=False)
 
@@ -81,13 +69,7 @@ class Response(Base):
 
 
 class Answer(Base):
-    """A respondent's answer to one question.
-
-    Values live in type-specific columns instead of a single stringified column
-    so numeric and boolean answers stay comparable and aggregatable in SQL.
-    Choice answers store no value here at all — they point at option rows through
-    :data:`answer_options`.
-    """
+    """A respondent's answer to one question."""
 
     __tablename__ = "answers"
     __table_args__ = (UniqueConstraint("response_id", "question_id", name="uq_answer_per_question"),)
@@ -104,8 +86,6 @@ class Answer(Base):
     value_number: Mapped[Optional[float]] = mapped_column(Float, default=None)
     value_bool: Mapped[Optional[bool]] = mapped_column(Boolean, default=None)
 
-    #: Set for rating questions; kept separate from ``value_number`` so a rating
-    #: distribution can be aggregated without mixing in free-form numbers.
     value_rating: Mapped[Optional[int]] = mapped_column(Integer, default=None)
 
     response: Mapped["Response"] = relationship(back_populates="answers")

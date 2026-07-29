@@ -7,18 +7,7 @@ from app.schemas.common import ORMModel, RequestModel
 
 
 class QuestionOptionIn(RequestModel):
-    """An option as submitted by the builder.
-
-    ``id`` is echoed back for options that already exist so an edit can update
-    them in place instead of deleting and recreating — which would orphan the
-    answers that reference them.
-
-    An empty label is accepted deliberately: the builder creates a choice question
-    with blank options for the creator to type into, so rejecting them here would
-    make adding a choice question impossible. A blank option is instead caught at
-    publish time, where it actually matters — see
-    :func:`app.services.form_service.publish_blockers`.
-    """
+    """An option as submitted by the builder."""
 
     id: Optional[int] = None
     label: str = Field(default="", max_length=500)
@@ -64,29 +53,17 @@ class QuestionBase(RequestModel):
 class QuestionCreate(QuestionBase):
     type: QuestionType
 
-    #: Where to insert the question. ``None`` appends to the end of the form.
     position: Optional[int] = Field(default=None, ge=0)
 
     @model_validator(mode="after")
     def _choice_questions_need_options(self) -> "QuestionCreate":
         if self.type in CHOICE_TYPES and not self.options:
-            # The builder creates choice questions with two blank options, so an
-            # empty list here means a malformed client request.
             raise ValueError(f"{self.type.value} questions require at least one option")
         return self
 
 
 class QuestionUpdate(QuestionBase):
-    """Full replacement of a question's editable fields.
-
-    The builder holds the whole question in local state and PUTs it back, so a
-    PATCH-style partial update would add ambiguity without removing any work.
-
-    ``type`` may be changed only while the question has no answers. Once a
-    respondent has answered it, the stored values live in type-specific columns
-    that a new type would not read — so the change is refused with a 409 rather
-    than silently orphaning the data. Omitting the field leaves the type alone.
-    """
+    """Full replacement of a question's editable fields."""
 
     type: Optional[QuestionType] = None
 
@@ -112,13 +89,7 @@ class QuestionOut(ORMModel):
 
 
 class QuestionBulkCreate(RequestModel):
-    """Several questions appended in one request.
-
-    Backs the builder's "Import questions" panel, where a creator pastes a list of
-    titles. Any ``position`` in the payload is ignored: importing a list means
-    appending in the order given, and honouring per-item positions would make the
-    result depend on the order the items happened to be inserted.
-    """
+    """Several questions appended in one request."""
 
     questions: list[QuestionCreate] = Field(min_length=1, max_length=100)
 

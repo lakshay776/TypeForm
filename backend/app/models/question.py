@@ -11,12 +11,7 @@ if TYPE_CHECKING:
 
 
 class Question(Base):
-    """A single question inside a form.
-
-    Type-specific settings are modelled as explicit nullable columns rather than
-    a JSON blob: every one of them participates in server-side answer validation,
-    so keeping them queryable and typed is worth the extra width.
-    """
+    """A single question inside a form."""
 
     __tablename__ = "questions"
     __table_args__ = (Index("ix_questions_form_position", "form_id", "position"),)
@@ -32,25 +27,20 @@ class Question(Base):
     title: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str] = mapped_column(Text, default="", nullable=False)
 
-    #: Zero-based display order within the form. Rewritten wholesale on reorder.
     position: Mapped[int] = mapped_column(Integer, nullable=False)
     is_required: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     placeholder: Mapped[str] = mapped_column(String(120), default="", nullable=False)
 
-    # short_text / long_text
     max_length: Mapped[Optional[int]] = mapped_column(Integer, default=None)
 
-    # number
     min_value: Mapped[Optional[float]] = mapped_column(Float, default=None)
     max_value: Mapped[Optional[float]] = mapped_column(Float, default=None)
     allow_decimal: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
-    # rating
     rating_max: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
     rating_icon: Mapped[str] = mapped_column(String(20), default="star", nullable=False)
 
-    # multiple_choice / dropdown
     allow_multiple: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     randomize_options: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
@@ -67,12 +57,7 @@ class Question(Base):
 
 
 class QuestionOption(Base):
-    """A selectable choice belonging to a multiple-choice or dropdown question.
-
-    Options are rows rather than a JSON array so that answers can reference them
-    by foreign key, which is what makes per-option summary stats a simple GROUP BY
-    instead of a scan-and-count over free text.
-    """
+    """A selectable choice belonging to a multiple-choice or dropdown question."""
 
     __tablename__ = "question_options"
     __table_args__ = (Index("ix_question_options_question_position", "question_id", "position"),)

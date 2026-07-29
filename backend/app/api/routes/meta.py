@@ -13,6 +13,7 @@ class CreatorOut(ORMModel):
 
 
 @router.get("/me", response_model=CreatorOut, summary="The acting creator")
+
 def me(creator: CurrentCreator) -> CreatorOut:
     """Returns the stand-in logged-in creator, used by the dashboard header."""
     return creator

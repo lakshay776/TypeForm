@@ -5,13 +5,6 @@ import { useState } from "react";
 import { Mic, Send } from "@/components/ui/Icons";
 import { cn } from "@/lib/format";
 
-/**
- * The "Ask Typeform AI" composer.
- *
- * A placeholder surface — there is no assistant behind it — but it is a real
- * input so the focus ring, the gradient border and the enabled/disabled send
- * button all behave the way the original does.
- */
 export function AskAI({ onSubmit }: { onSubmit: (prompt: string) => void }) {
   const [value, setValue] = useState("");
   const [focused, setFocused] = useState(false);

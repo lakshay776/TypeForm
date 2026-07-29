@@ -33,7 +33,6 @@ export default function DashboardPage() {
   const [sort, setSort] = useState<SortKey>("created");
   const [view, setView] = useState<ViewMode>("list");
 
-  /** Drawer state for the sidebar below lg; ignored at wider widths. */
   const [navOpen, setNavOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [renamingId, setRenamingId] = useState<number | null>(null);
@@ -59,7 +58,6 @@ export default function DashboardPage() {
       .catch(() => setCreator(null));
   }, []);
 
-  /** Prefers the API's own message, which is already written for a user to read. */
   const reportFailure = (fallback: string) => (cause: unknown) => {
     errorToast(cause instanceof ApiError ? cause.message : fallback);
   };
@@ -67,10 +65,6 @@ export default function DashboardPage() {
   const handleCreate = async () => {
     setCreating(true);
     try {
-      // Created with no questions: the builder opens its element picker so the
-      // creator chooses the first question's type, and whatever they pick becomes
-      // question 1. `?new=1` is what tells the builder this is a fresh form, so
-      // reopening an existing empty form doesn't pop the picker unasked.
       const form = await api.forms.create();
       prepend(form);
       success("Form created");
@@ -84,8 +78,6 @@ export default function DashboardPage() {
 
   const handleRename = async (form: FormSummary, title: string) => {
     setRenamingId(null);
-    // Applied locally first so the new name paints immediately; the response then
-    // reconciles updated_at and anything else the server changed.
     replace({ ...form, title });
     try {
       replace(await api.forms.update(form.id, { title }));
@@ -111,7 +103,6 @@ export default function DashboardPage() {
       await navigator.clipboard.writeText(url);
       success("Link copied to clipboard");
     } catch {
-      // Clipboard access requires a secure context; say so rather than fail quietly.
       errorToast("Couldn't copy — your browser blocked clipboard access.");
     }
   };
@@ -131,8 +122,6 @@ export default function DashboardPage() {
       }
     } catch (cause) {
       replace(form);
-      // The server decides whether a form is publishable — an untitled question
-      // blocks it just as a missing one does, which a question count can't see.
       const blockers = publishProblems(cause);
       if (blockers.length > 0) {
         errorToast(
@@ -172,12 +161,8 @@ export default function DashboardPage() {
   });
 
   const searching = Boolean(search.trim());
-  // Gated on `loading` rather than `initialLoading` so a search in flight can't
-  // briefly flash "no results" before its response lands.
   const showEmptyState = !loading && !error && forms.length === 0 && !searching;
   const showNoResults = !loading && !error && forms.length === 0 && searching;
-  // Headings stay put during a search: the previous results remain on screen
-  // while the request is in flight, so hiding them would shift the layout.
   const showColumnHeadings = view === "list" && !error && !initialLoading && forms.length > 0;
 
   return (
@@ -186,9 +171,6 @@ export default function DashboardPage() {
       <NavTabs />
 
       <div className="relative flex min-h-0 flex-1">
-        {/* Below lg the rail is a drawer: at 375px a fixed 256px column leaves
-            ~119px for the list, which is not a narrow layout so much as no
-            layout. Static from lg up, where it fits alongside. */}
         <Sidebar
           search={search}
           onSearchChange={setSearch}
@@ -211,9 +193,6 @@ export default function DashboardPage() {
         )}
 
         <main className="scrollbar-slim min-w-0 flex-1 overflow-y-auto bg-workspace">
-          {/* No max-width: capping this at 1090px and centring it left a wide gap
-              either side, so the list floated in the middle instead of filling the
-              workspace. Padding alone, matching the reference. */}
           <div className="w-full px-4 pt-8 pb-12 sm:px-8 sm:pt-10 lg:px-11 lg:pt-14">
             <WorkspaceHeader
               sort={sort}
@@ -309,11 +288,6 @@ export default function DashboardPage() {
   );
 }
 
-/**
- * Hidden below md to stay in step with the row cells it labels — see
- * SECONDARY_CELL in FormRow. A heading whose column has collapsed is worse than
- * no heading: it shifts every remaining label one column left.
- */
 function ColumnHeading({ children }: { children: React.ReactNode }) {
   return <span className="hidden text-[14px] text-ink-soft md:block">{children}</span>;
 }

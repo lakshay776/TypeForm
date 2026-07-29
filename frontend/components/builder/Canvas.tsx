@@ -19,14 +19,6 @@ interface CanvasProps {
   onPatch: (patch: Partial<Question>) => void;
 }
 
-/**
- * The editable question card.
- *
- * Renders at the form's own theme colours so the canvas is a genuine preview
- * rather than a differently-styled editor. Choice options are editable inputs
- * inside the same `ChoiceOption` card the respondent flow uses, which is why a
- * choice question looks identical here and when filled in.
- */
 export function Canvas({ form, question, number, onPatch }: CanvasProps) {
   const { theme } = form;
   const choice = isChoiceType(question.type);
@@ -42,8 +34,6 @@ export function Canvas({ form, question, number, onPatch }: CanvasProps) {
     onPatch({
       options: [
         ...question.options,
-        // A negative id marks a row that does not exist server-side yet; the API
-        // treats an option without a real id as an insert.
         { id: -Date.now(), label: "", position: question.options.length },
       ],
     });
@@ -112,8 +102,6 @@ export function Canvas({ form, question, number, onPatch }: CanvasProps) {
                         />
                       </ChoiceOption>
 
-                      {/* Never let the creator delete the last option: a choice
-                          question with none is rejected by the API. */}
                       {question.options.length > 1 && (
                         <IconButton
                           label={`Remove option ${index + 1}`}
@@ -137,8 +125,6 @@ export function Canvas({ form, question, number, onPatch }: CanvasProps) {
                   </button>
                 </div>
               ) : (
-                // Non-choice types render the real input, disabled: the creator is
-                // editing the question, not answering it.
                 <AnswerField
                   question={question}
                   value={null}

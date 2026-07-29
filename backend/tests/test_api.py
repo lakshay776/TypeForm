@@ -70,11 +70,6 @@ def _valid_answers(questions):
     ]
 
 
-# --------------------------------------------------------------------------- #
-# Form management
-# --------------------------------------------------------------------------- #
-
-
 def test_health_and_creator(client):
     assert client.get("/health").json() == {"status": "ok"}
     creator = client.get(f"{API}/me").json()
@@ -115,7 +110,6 @@ def test_form_crud_and_counts(client):
 
     renamed = client.patch(f"{API}/forms/{form['id']}", json={"title": "Renamed survey"})
     assert renamed.json()["title"] == "Renamed survey"
-    # The slug is deliberately stable across a rename so shared links keep working.
     assert renamed.json()["slug"] == form["slug"]
 
     listed = client.get(f"{API}/forms").json()
@@ -128,9 +122,7 @@ def test_form_crud_and_counts(client):
 
 
 def test_unknown_fields_are_rejected_not_ignored(client):
-    """Pydantic's default is to drop unknown keys, which makes a client bug — a
-    typo, or a field the deployed backend doesn't have yet — look like a
-    successful write."""
+    """Pydantic's default is to drop unknown keys, which makes a client bug — a"""
     form = _create_form(client)
 
     typo = client.patch(f"{API}/forms/{form['id']}", json={"titel": "misspelled"})
@@ -150,7 +142,6 @@ def test_link_can_be_edited(client):
     form, questions = _full_form(client)
     original_slug = form["slug"]
 
-    # A response collected under the old slug must survive the rename.
     client.post(
         f"{API}/public/forms/{original_slug}/responses",
         json={"answers": _valid_answers(questions)},
@@ -162,7 +153,6 @@ def test_link_can_be_edited(client):
     assert renamed.json()["public_url"].endswith("/join-our-beta")
     assert renamed.json()["response_count"] == 1
 
-    # The new link works and the old one is gone.
     assert client.get(f"{API}/public/forms/join-our-beta").status_code == 200
     assert client.get(f"{API}/public/forms/{original_slug}").status_code == 404
 
@@ -176,10 +166,8 @@ def test_link_must_be_unique(client):
     clash = client.patch(f"{API}/forms/{second['id']}", json={"slug": "shared-name"})
     assert clash.status_code == 409
     assert "already taken" in clash.json()["detail"]
-    # The rejected update leaves the form untouched.
     assert client.get(f"{API}/forms/{second['id']}").json()["slug"] == second["slug"]
 
-    # Setting a form's own slug again is a no-op, not a conflict.
     assert client.patch(f"{API}/forms/{first['id']}", json={"slug": "shared-name"}).status_code == 200
 
 
@@ -214,7 +202,6 @@ def test_publish_exposes_public_url_and_unpublish_hides_it(client):
     unpublished = client.post(f"{API}/forms/{form['id']}/unpublish").json()
     assert unpublished["status"] == "draft"
     assert unpublished["public_url"] is None
-    # published_at is kept as a record of when the form first went live.
     assert unpublished["published_at"] is not None
     assert client.get(f"{API}/public/forms/{published['slug']}").status_code == 404
 
@@ -226,18 +213,15 @@ def test_editing_a_live_form_flags_unpublished_edits(client):
     published = client.post(f"{API}/forms/{form['id']}/publish").json()
     assert published["has_unpublished_edits"] is False
 
-    # Editing a question is an edit to the live form.
     client.put(
         f"{API}/forms/{form['id']}/questions/{question['id']}",
         json={"type": "short_text", "title": "Hi again", "options": []},
     )
     assert client.get(f"{API}/forms/{form['id']}").json()["has_unpublished_edits"] is True
 
-    # Publishing again is what clears it — this is the "Publish edits" action.
     republished = client.post(f"{API}/forms/{form['id']}/publish").json()
     assert republished["has_unpublished_edits"] is False
 
-    # Form-level edits count too.
     client.patch(f"{API}/forms/{form['id']}", json={"title": "Renamed"})
     assert client.get(f"{API}/forms/{form['id']}").json()["has_unpublished_edits"] is True
 
@@ -250,7 +234,6 @@ def test_a_draft_is_never_flagged_as_having_unpublished_edits(client):
 
     assert client.get(f"{API}/forms/{form['id']}").json()["has_unpublished_edits"] is False
 
-    # Unpublishing also clears it, so republishing later doesn't start out dirty.
     client.post(f"{API}/forms/{form['id']}/publish")
     client.patch(f"{API}/forms/{form['id']}", json={"title": "Edited while live"})
     assert client.get(f"{API}/forms/{form['id']}").json()["has_unpublished_edits"] is True
@@ -274,11 +257,7 @@ def test_an_empty_form_cannot_be_published(client):
 
 
 def test_an_incomplete_form_is_still_publishable(client):
-    """A missing title or a blank option label is incomplete, not broken.
-
-    The UI shows a placeholder for either, so refusing to publish would stop a
-    creator sharing a draft they are still wording.
-    """
+    """A missing title or a blank option label is incomplete, not broken."""
     form = _create_form(client, "Rough draft")
     created = client.post(
         f"{API}/forms/{form['id']}/questions",
@@ -290,15 +269,13 @@ def test_an_incomplete_form_is_still_publishable(client):
     assert published.status_code == 200, published.text
     assert published.json()["public_url"]
 
-    # And it is genuinely reachable, untitled and all.
     public = client.get(f"{API}/public/forms/{published.json()['slug']}")
     assert public.status_code == 200
     assert public.json()["questions"][0]["title"] == ""
 
 
 def test_blank_option_labels_are_savable_but_not_publishable(client):
-    """The builder cannot create an option and then let you type into it if the
-    API refuses blank labels, so they are accepted on write."""
+    """The builder cannot create an option and then let you type into it if the"""
     form = _create_form(client)
     created = client.post(
         f"{API}/forms/{form['id']}/questions",
@@ -320,15 +297,9 @@ def test_duplicate_copies_definition_but_not_responses(client):
     assert clone["slug"] != form["slug"]
     assert len(clone["questions"]) == len(form["questions"])
     assert clone["response_count"] == 0
-    # Options are copied as new rows, not shared with the original.
     original_option_ids = {o["id"] for q in form["questions"] for o in q["options"]}
     clone_option_ids = {o["id"] for q in clone["questions"] for o in q["options"]}
     assert not original_option_ids & clone_option_ids
-
-
-# --------------------------------------------------------------------------- #
-# Questions
-# --------------------------------------------------------------------------- #
 
 
 def test_questions_are_densely_positioned_through_edits(client):
@@ -379,7 +350,6 @@ def test_bulk_create_appends_in_order(client):
     ]
 
     questions = client.get(f"{API}/forms/{form['id']}/questions").json()
-    # Appended after what was already there, and positions stay dense.
     assert [q["title"] for q in questions] == [
         "Existing",
         "What's your name?",
@@ -491,7 +461,6 @@ def test_switching_away_from_a_choice_type_drops_its_options(client):
         f"{API}/forms/{form['id']}/questions/{question['id']}",
         json={"type": "long_text", "title": "Tell me more"},
     ).json()
-    # Options can no longer be referenced by anything, so they are not left behind.
     assert updated["options"] == []
 
 
@@ -510,7 +479,6 @@ def test_question_type_locks_once_it_has_answers(client):
     assert locked.status_code == 409
     assert "answers" in locked.json()["detail"]
 
-    # The question is untouched, and edits that keep the type still work.
     unchanged = client.get(f"{API}/forms/{form['id']}/questions").json()
     assert next(q for q in unchanged if q["id"] == target["id"])["type"] == "short_text"
 
@@ -539,11 +507,6 @@ def test_choice_question_requires_options(client):
         f"{API}/forms/{form['id']}/questions", json={"type": "dropdown", "title": "Empty"}
     )
     assert response.status_code == 422
-
-
-# --------------------------------------------------------------------------- #
-# Respondent flow
-# --------------------------------------------------------------------------- #
 
 
 def test_public_form_hides_creator_only_fields(client):
@@ -575,18 +538,12 @@ def test_required_answers_are_enforced_server_side(client):
     issues = {issue["question_id"]: issue["message"] for issue in response.json()["issues"]}
     required_ids = {questions[key]["id"] for key in ("short_text", "email", "number")}
     assert required_ids <= set(issues)
-    # Optional questions must not appear as issues.
     assert questions["long_text"]["id"] not in issues
-    # Nothing is persisted when validation fails.
     assert client.get(f"{API}/forms/{form['id']}/responses").json()["total"] == 0
 
 
 def test_required_message_depends_on_how_the_answer_is_given(client):
-    """Typed answers say "fill this in"; clicked ones say "make a selection".
-
-    The frontend mirrors these strings in `lib/answerValidation.ts`, so pinning
-    them here is what stops the two layers wording the same mistake differently.
-    """
+    """Typed answers say "fill this in"; clicked ones say "make a selection"."""
     form = _create_form(client, "Required copy")
     types = ["short_text", "long_text", "email", "number", "multiple_choice", "dropdown", "yes_no", "rating"]
     ids = {}
@@ -627,7 +584,6 @@ def test_per_type_validation_messages(client):
     assert submit("rating", 9).status_code == 422  # above rating_max
     assert submit("short_text", "x" * 11).status_code == 422  # above max_length
     assert submit("dropdown", 999_999).status_code == 422  # option not on this question
-    # dropdown is single-select, so two ids must be rejected
     dropdown_ids = [o["id"] for o in questions["dropdown"]["options"]]
     assert submit("dropdown", dropdown_ids).status_code == 422
 
@@ -651,7 +607,6 @@ def test_optional_questions_can_be_skipped(client):
     detail = client.get(
         f"{API}/forms/{form['id']}/responses/{responses['items'][0]['id']}"
     ).json()
-    # Skipped questions produce no answer row at all.
     assert len(detail["answers"]) == 3
 
 
@@ -660,11 +615,6 @@ def test_cannot_submit_to_an_unpublished_form(client):
     _add_question(client, form["id"], type="short_text", title="Hi")
     response = client.post(f"{API}/public/forms/{form['slug']}/responses", json={"answers": []})
     assert response.status_code == 404
-
-
-# --------------------------------------------------------------------------- #
-# Results
-# --------------------------------------------------------------------------- #
 
 
 def test_response_list_detail_and_pagination(client):
@@ -742,7 +692,6 @@ def test_summary_statistics(client):
     choice = by_id[questions["multiple_choice"]["id"]]
     counts = {c["label"]: c["count"] for c in choice["option_counts"]}
     assert counts == {"A": 2, "B": 1, "C": 0}
-    # Unselected options are still listed, at 0%.
     assert next(c["percentage"] for c in choice["option_counts"] if c["label"] == "C") == 0.0
 
     number = by_id[questions["number"]["id"]]
@@ -785,7 +734,6 @@ def test_csv_export(client):
     header, row = export.text.strip().split("\n")[:2]
     assert header.startswith("Response ID,Submitted at,Duration (s),")
     assert "Name" in header and "Pick one" in header
-    # One column per question in the definition, even where answers were skipped.
     assert len(row.split(",")) >= 3 + len(questions)
     assert "ada@example.com" in row
 
@@ -798,10 +746,8 @@ def test_theme_update_round_trips(client):
     ).json()
     assert updated["theme"]["background_color"] == "#0B1B2B"
     assert updated["theme"]["button_color"] == "#3FA1F5"
-    # Unspecified theme fields keep the table defaults.
     assert updated["theme"]["question_color"] == "#262627"
 
-    # A second partial patch must not reset the colours set by the first.
     again = client.patch(
         f"{API}/forms/{form['id']}", json={"theme": {"font_family": "Georgia"}}
     ).json()

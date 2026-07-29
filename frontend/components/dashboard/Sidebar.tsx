@@ -16,7 +16,6 @@ interface SidebarProps {
   creating: boolean;
   onCreateForm: () => void;
   onPlaceholder: (feature: string) => void;
-  /** Drawer state, used below lg only. */
   open?: boolean;
   onClose?: () => void;
 }
@@ -38,13 +37,10 @@ export function Sidebar({
     <aside
       className={cn(
         "flex w-[var(--spacing-sidebar)] shrink-0 flex-col border-r border-line bg-workspace",
-        // Off-canvas below lg, in the flow from lg up. Translated rather than
-        // unmounted so the search box keeps its value across open and close.
         "fixed inset-y-0 left-0 z-40 transition-transform duration-200 lg:static lg:z-auto lg:translate-x-0",
         open ? "translate-x-0 shadow-[0_0_40px_-8px_rgba(24,22,30,0.35)]" : "-translate-x-full",
       )}
     >
-      {/* Only the drawer needs dismissing; from lg up the rail is just there. */}
       <div className="flex justify-end px-3 pt-3 lg:hidden">
         <button
           type="button"
@@ -61,8 +57,6 @@ export function Sidebar({
           variant="primary"
           size="md"
           onClick={() => {
-            // Closes the drawer as it navigates, or the new builder would open
-            // behind it on a phone.
             onClose?.();
             onCreateForm();
           }}
@@ -93,8 +87,6 @@ export function Sidebar({
         </label>
       </div>
 
-      {/* A white band, not a grey hairline: with the rail itself on #F7F7F8 the
-          separation reads as a gap between groups rather than a drawn rule. */}
       <div className="h-1.5 shrink-0 bg-canvas" />
 
       <div className="flex items-center justify-between px-5 pt-5 pb-1.5">
@@ -138,7 +130,6 @@ export function Sidebar({
         </div>
       )}
 
-      {/* Pushes the meter and composer to the bottom of the rail. */}
       <div className="flex-1" />
 
       <ResponseMeter

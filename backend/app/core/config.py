@@ -11,18 +11,12 @@ class Settings(BaseSettings):
     app_name: str = "Typeform Clone API"
     api_prefix: str = "/api"
 
-    # SQLite by default. Kept as a URL so the app can move to Postgres on a host
-    # without a persistent disk, without touching application code.
     database_url: str = "sqlite:///./typeform.db"
 
-    # Comma-separated list of origins allowed to call the API.
     cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
 
-    # Base URL the frontend is served from, used to build shareable public links.
     public_form_base_url: str = "http://localhost:3000/f"
 
-    # Auth is out of scope for this assignment: every creator-scoped request is
-    # attributed to this seeded account (see app/api/deps.py).
     default_creator_email: str = "creator@typeformclone.dev"
     default_creator_name: str = "Alex Morgan"
 
@@ -32,8 +26,8 @@ class Settings(BaseSettings):
 
 
 @lru_cache
+
 def get_settings() -> Settings:
     return Settings()
-
 
 settings = get_settings()

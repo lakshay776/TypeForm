@@ -12,7 +12,6 @@ interface Toast {
   id: number;
   tone: ToastTone;
   message: string;
-  /** Optional inline action, e.g. "Undo" or "Open". */
   action?: { label: string; onClick: () => void };
 }
 
@@ -38,7 +37,6 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     (message, options) => {
       const id = nextId.current++;
       setToasts((current) => [
-        // Cap the stack so a burst of actions can't paper over the UI.
         ...current.slice(-2),
         { id, message, tone: options?.tone ?? "info", action: options?.action },
       ]);
@@ -74,8 +72,6 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 8, scale: 0.96 }}
               transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-              // aria-live so a screen reader announces the result of an action
-              // the user can't see, like "Form duplicated".
               aria-live="polite"
               className={cn(
                 "pointer-events-auto flex items-center gap-3 rounded-full py-2.5 pr-2.5 pl-4",

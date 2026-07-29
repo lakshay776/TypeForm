@@ -6,13 +6,6 @@ import { AutoTextarea } from "@/components/builder/AutoTextarea";
 import { Check } from "@/components/ui/Icons";
 import type { FormDetail, FormUpdatePayload } from "@/lib/types";
 
-/**
- * Canvas for the welcome and thank-you screens.
- *
- * These are form-level fields rather than questions, which is why they are edited
- * here instead of appearing in the question list — and why the brief's "settings
- * placeholder (thank-you screen)" is a real editor rather than a stub.
- */
 export function ScreenCanvas({
   form,
   kind,

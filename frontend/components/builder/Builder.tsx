@@ -45,13 +45,6 @@ export function Builder({ formId, isNew = false }: { formId: number; isNew?: boo
     reload,
   } = builder;
 
-  /**
-   * Publishes edits to an already-live form.
-   *
-   * Awaited rather than fired and forgotten so the button can stay busy until the
-   * server has actually accepted it — and so a rejection surfaces instead of the
-   * button quietly vanishing as though it had worked.
-   */
   const handlePublishEdits = async () => {
     try {
       await setPublished(true);
@@ -66,8 +59,6 @@ export function Builder({ formId, isNew = false }: { formId: number; isNew?: boo
   };
 
   const [device, setDevice] = useState<DeviceMode>("desktop");
-  // Seeded from the prop rather than opened in an effect, so a brand-new form
-  // renders with the picker already up instead of flashing an empty builder first.
   const [pickerOpen, setPickerOpen] = useState(isNew);
   const [designOpen, setDesignOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -132,8 +123,6 @@ export function Builder({ formId, isNew = false }: { formId: number; isNew?: boo
 
   const handleRemoveWelcomeScreen = () => {
     patchForm({ show_welcome_screen: false });
-    // The row it was selected through is about to disappear, so move the canvas
-    // somewhere that still exists.
     select(
       form.questions.length > 0
         ? { kind: "question", id: form.questions[0].id }
@@ -147,8 +136,6 @@ export function Builder({ formId, isNew = false }: { formId: number; isNew?: boo
     try {
       await changeType(selectedQuestion.id, type);
     } catch (cause) {
-      // A 409 means answers already exist, which is worth explaining rather than
-      // showing a generic failure.
       errorToast(cause instanceof ApiError ? cause.message : "Couldn't change the type.");
     }
   };
@@ -187,7 +174,6 @@ export function Builder({ formId, isNew = false }: { formId: number; isNew?: boo
       ? form.questions.findIndex((question) => question.id === selectedQuestion.id) + 1
       : 0;
 
-  /** The welcome screen is selected but the form no longer has one. */
   const staleWelcome = selection.kind === "welcome" && !form.show_welcome_screen;
 
   return (
@@ -201,10 +187,6 @@ export function Builder({ formId, isNew = false }: { formId: number; isNew?: boo
         onPlaceholder={setPlaceholder}
       />
 
-      {/* Stacked below lg, three columns from lg up.
-          Three fixed-ish columns need roughly 900px before the canvas has any
-          room left; below that the pages list, canvas and settings become
-          sections of one scrolling page instead. */}
       <div className="scrollbar-slim flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
         <PagesPanel
           questions={form.questions}
@@ -219,8 +201,6 @@ export function Builder({ formId, isNew = false }: { formId: number; isNew?: boo
           onPlaceholder={setPlaceholder}
         />
 
-        {/* min-h below lg because the parent scrolls there, so flex-1 has no
-            height to divide and the canvas would collapse to its content. */}
         <main className="flex min-h-[460px] min-w-0 flex-1 flex-col gap-3 px-4 py-4 lg:min-h-0 lg:px-0 lg:pr-2">
           <CanvasToolbar
             device={device}
@@ -236,8 +216,6 @@ export function Builder({ formId, isNew = false }: { formId: number; isNew?: boo
             <div
               className={cn(
                 "scrollbar-slim min-w-0 flex-1 overflow-y-auto",
-                // Mobile mode narrows the canvas rather than scaling it, so text
-                // wraps the way it actually would on a phone.
                 device === "mobile" && "mx-auto max-w-[440px] border-x border-line",
               )}
             >
@@ -249,8 +227,6 @@ export function Builder({ formId, isNew = false }: { formId: number; isNew?: boo
                   onPatch={(patch) => patchQuestion(selectedQuestion.id, patch)}
                 />
               ) : selection.kind === "question" || staleWelcome ? (
-                // Covers a deleted question still being selected, and a welcome
-                // screen that has since been removed.
                 <EmptyCanvas onAdd={() => setPickerOpen(true)} />
               ) : (
                 <ScreenCanvas form={form} kind={selection.kind} onPatch={patchForm} />
@@ -298,7 +274,6 @@ export function Builder({ formId, isNew = false }: { formId: number; isNew?: boo
         form={form}
         device={device}
       />
-
 
       <ConfirmModal
         open={deleteId !== null}

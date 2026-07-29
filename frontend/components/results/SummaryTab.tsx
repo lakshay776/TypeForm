@@ -4,20 +4,12 @@ import { ACCENT_CLASSES, TYPE_META } from "@/lib/questionTypes";
 import { cn, pluralize, questionLabel } from "@/lib/format";
 import type { FormStats, QuestionSummary } from "@/lib/types";
 
-/** mm:ss, matching Typeform's "Time to complete". */
 function formatDuration(seconds: number | null): string {
   if (seconds === null) return "—";
   const whole = Math.round(seconds);
   return `${String(Math.floor(whole / 60)).padStart(2, "0")}:${String(whole % 60).padStart(2, "0")}`;
 }
 
-/**
- * Per-question summary statistics.
- *
- * Every number comes from `GET /forms/{id}/summary`, which aggregates in SQL — so
- * this component only formats, and the figures can't drift from what the CSV
- * export or the responses table would say.
- */
 export function SummaryTab({ stats }: { stats: FormStats }) {
   if (stats.completed_responses === 0) {
     return (
@@ -33,8 +25,6 @@ export function SummaryTab({ stats }: { stats: FormStats }) {
 
   return (
     <>
-      {/* Only metrics the app actually records. Views and starts would need
-          page-level tracking that doesn't exist, so they aren't shown. */}
       <dl className="flex flex-wrap gap-x-14 gap-y-6">
         <Metric label="Submissions" value={String(stats.completed_responses)} />
         <Metric label="Completion rate" value={`${stats.completion_rate}%`} />
@@ -98,7 +88,6 @@ function QuestionCard({ question, number }: { question: QuestionSummary; number:
 }
 
 function QuestionStats({ question }: { question: QuestionSummary }) {
-  // Choice and dropdown: counts per option, which is the case the brief names.
   if (question.option_counts) {
     return (
       <StatTable
@@ -157,8 +146,6 @@ function QuestionStats({ question }: { question: QuestionSummary }) {
     );
   }
 
-  // Free text: the API returns the most recent answers rather than all of them,
-  // so the full set stays the responses table's job.
   if (question.recent_answers) {
     if (question.recent_answers.length === 0) {
       return <p className="text-[14px] text-ink-soft">No answers yet.</p>;

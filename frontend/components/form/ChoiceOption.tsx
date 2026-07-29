@@ -3,13 +3,6 @@
 import { cn } from "@/lib/format";
 import { optionKey } from "@/lib/questionTypes";
 
-/**
- * A single selectable option card.
- *
- * Shared by the builder canvas and the respondent flow so the two can't drift
- * apart: what the creator sees while editing is literally the same component the
- * respondent will see.
- */
 export function ChoiceOption({
   index,
   selected = false,
@@ -26,7 +19,6 @@ export function ChoiceOption({
   buttonColor: string;
   onClick?: () => void;
   children: React.ReactNode;
-  /** `div` when the card only wraps an input, to avoid nesting interactives. */
   as?: "button" | "div";
   className?: string;
 }) {

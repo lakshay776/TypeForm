@@ -10,11 +10,7 @@ _META_HEADERS = ["Response ID", "Submitted at", "Duration (s)"]
 
 
 def responses_to_csv(db: Session, form: Form) -> str:
-    """Flatten a form's responses into a CSV with one column per question.
-
-    Columns come from the form definition rather than from the answers present,
-    so every row has the same width even when respondents skipped questions.
-    """
+    """Flatten a form's responses into a CSV with one column per question."""
     questions = list(form.questions)
     buffer = io.StringIO()
     writer = csv.writer(buffer, lineterminator="\n")

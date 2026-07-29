@@ -13,18 +13,6 @@ import type { AnswerSubmission, PublicForm, ResponseCreated } from "@/lib/types"
 
 type Step = { kind: "welcome" } | { kind: "question"; index: number };
 
-/**
- * The public form-filling experience.
- *
- * One question per screen. Answers live here until submitted in a single request
- * at the end — the API stores a response atomically, so there is nothing to
- * partially write and nothing to clean up if a respondent abandons the form.
- *
- * Validation runs on the client for instant feedback and again on the server,
- * which is the authority. When the server rejects a submission it returns
- * per-question issues, and the flow jumps back to the first offending question
- * rather than showing one opaque failure.
- */
 export function FormRunner({ form }: { form: PublicForm }) {
   const steps = useMemo<Step[]>(() => {
     const list: Step[] = [];
@@ -42,12 +30,6 @@ export function FormRunner({ form }: { form: PublicForm }) {
   const [submitted, setSubmitted] = useState<ResponseCreated | null>(null);
   const [fatal, setFatal] = useState<string | null>(null);
 
-  /**
-   * When the respondent opened the form, for the reported fill duration.
-   *
-   * A ref rather than state: it must not change across renders, and reading the
-   * clock during render would differ between the server and client pass.
-   */
   const startedAt = useRef<number | null>(null);
   useEffect(() => {
     startedAt.current = Date.now();
@@ -63,7 +45,6 @@ export function FormRunner({ form }: { form: PublicForm }) {
     ? (answeredCount / form.questions.length) * 100
     : 0;
 
-  /** Pending auto-advance, so it can be cancelled if anything else happens first. */
   const advanceTimer = useRef<number | null>(null);
   const cancelAutoAdvance = useCallback(() => {
     if (advanceTimer.current !== null) {
@@ -87,8 +68,6 @@ export function FormRunner({ form }: { form: PublicForm }) {
   );
 
   const submit = useCallback(async () => {
-    // Everything is re-checked before sending: a respondent can reach the last
-    // question, go back, clear a required answer, and come forward again.
     for (const [index, question] of form.questions.entries()) {
       const message = validateAnswer(question, answers[question.id] ?? null);
       if (message) {
@@ -150,8 +129,6 @@ export function FormRunner({ form }: { form: PublicForm }) {
   }, [cancelAutoAdvance, step, form.questions, answers, isLastQuestion, submit, steps.length]);
 
   const goBack = useCallback(() => {
-    // Never validates: a respondent must always be able to return to a question
-    // they left incomplete.
     cancelAutoAdvance();
     setError(null);
     setDirection(-1);
@@ -161,15 +138,12 @@ export function FormRunner({ form }: { form: PublicForm }) {
   const setAnswer = useCallback(
     (questionId: number, value: AnswerValue) => {
       setAnswers((current) => ({ ...current, [questionId]: value }));
-      // Clear the message as soon as they start fixing it.
       setError(null);
 
       cancelAutoAdvance();
       if (step.kind !== "question") return;
 
       const question = form.questions[step.index];
-      // Not on the last question: that would submit the form without the respondent
-      // ever pressing Submit.
       if (question.id !== questionId || isLastQuestion) return;
       if (!advancesOnSelect(question) || isEmptyAnswer(value)) return;
 
@@ -186,30 +160,16 @@ export function FormRunner({ form }: { form: PublicForm }) {
   useEffect(() => {
     if (submitted) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      // A field that already acted on this key marks it handled. Checked via
-      // defaultPrevented rather than by letting the field call stopPropagation:
-      // the App Router hydrates the whole document, so React's delegated listener
-      // and this one are both attached to `document` — and stopPropagation cannot
-      // stop a listener on the same node. defaultPrevented is visible to every
-      // listener regardless of registration order.
-      //
-      // Without this, ArrowDown in an open dropdown would move its highlight and
-      // advance the question in the same keypress.
       if (event.defaultPrevented) return;
 
       const tag = (event.target as HTMLElement | null)?.tagName;
       const inField = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
 
-      // Enter inside a field is handled by the field itself, so Shift+Enter can
-      // stay a newline in long text.
       if (event.key === "Enter" && !inField) {
         event.preventDefault();
         advance();
       }
 
-      // Arrows still navigate from a single-line input, where up/down have nothing
-      // else to do — but not from a textarea (they move the caret) or a native
-      // select (they change the selection).
       const arrowsOwnedByField = tag === "TEXTAREA" || tag === "SELECT";
       if (arrowsOwnedByField) return;
 

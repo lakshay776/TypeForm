@@ -22,13 +22,6 @@ type Tab = "summary" | "responses";
 
 const PAGE_SIZE = 25;
 
-/**
- * The Results tab: per-question summary statistics and the submissions table.
- *
- * Both datasets are loaded once on mount rather than per sub-tab, so switching
- * between Summary and Responses is instant and the response count in the tab label
- * is correct before you have opened that tab.
- */
 export function ResultsView({ form }: { form: FormDetail }) {
   const [tab, setTab] = useState<Tab>("summary");
   const [stats, setStats] = useState<FormStats | null>(null);
@@ -87,7 +80,6 @@ export function ResultsView({ form }: { form: FormDetail }) {
     }
   }, [form.id, items.length]);
 
-  /** Fetched on demand: the table row carries only rendered strings. */
   const openResponse = useCallback(
     async (responseId: number) => {
       setOpenId(responseId);
@@ -121,12 +113,6 @@ export function ResultsView({ form }: { form: FormDetail }) {
         </SubTab>
       </nav>
 
-      {/*
-       * The two tabs want different layouts. Summary is a scrolling column of
-       * cards, so it is centred and capped. Responses is a table that should use
-       * the whole width and fill the remaining height, with its own horizontal
-       * scrollbar pinned to the bottom of the card rather than the page scrolling.
-       */}
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
         {error ? (
           <div className="mx-auto w-full max-w-[1180px] px-8 py-10">
@@ -215,7 +201,6 @@ function SubTab({
       )}
     >
       {children}
-      {/* Sits on the nav's own border so the indicator replaces that segment. */}
       {active && <span className="absolute inset-x-3 -bottom-px h-[2.5px] rounded-full bg-ink" />}
     </button>
   );

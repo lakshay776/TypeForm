@@ -20,6 +20,7 @@ def _detail(db: DbSession, form) -> FormDetail:
 
 
 @router.get("", response_model=list[FormSummary], summary="List the creator's forms")
+
 def list_forms(
     db: DbSession,
     creator: CurrentCreator,
@@ -35,12 +36,14 @@ def list_forms(
     status_code=status.HTTP_201_CREATED,
     summary="Create a form",
 )
+
 def create_form(db: DbSession, creator: CurrentCreator, payload: FormCreate) -> FormDetail:
     form = form_service.create_form(db, creator.id, payload)
     return _detail(db, form)
 
 
 @router.get("/{form_id}", response_model=FormDetail, summary="Get a form definition")
+
 def get_form(db: DbSession, form: OwnedForm) -> FormDetail:
     return _detail(db, form)
 
@@ -51,6 +54,7 @@ def get_form(db: DbSession, form: OwnedForm) -> FormDetail:
     responses={409: {"description": "The requested link is already taken"}},
     summary="Update form settings (title, link, screens, theme)",
 )
+
 def update_form(db: DbSession, form: OwnedForm, payload: FormUpdate) -> FormDetail:
     try:
         updated = form_service.update_form(db, form, payload)
@@ -65,6 +69,7 @@ def update_form(db: DbSession, form: OwnedForm, payload: FormUpdate) -> FormDeta
     status_code=status.HTTP_201_CREATED,
     summary="Duplicate a form definition (without its responses)",
 )
+
 def duplicate_form(db: DbSession, form: OwnedForm) -> FormDetail:
     clone = form_service.duplicate_form(db, form)
     return _detail(db, clone)
@@ -76,12 +81,11 @@ def duplicate_form(db: DbSession, form: OwnedForm) -> FormDetail:
     responses={422: {"model": PublishBlocked, "description": "The form is incomplete"}},
     summary="Publish a form and expose its shareable link",
 )
+
 def publish_form(db: DbSession, form: OwnedForm) -> Union[FormDetail, JSONResponse]:
     try:
         published = form_service.set_published(db, form, True)
     except FormNotPublishable as exc:
-        # Returned as a plain body rather than an HTTPException so `problems` sits
-        # at the top level, matching PublishBlocked.
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             content=PublishBlocked(detail=str(exc), problems=exc.problems).model_dump(),
@@ -94,6 +98,7 @@ def publish_form(db: DbSession, form: OwnedForm) -> Union[FormDetail, JSONRespon
     response_model=FormDetail,
     summary="Unpublish a form, taking its public link offline",
 )
+
 def unpublish_form(db: DbSession, form: OwnedForm) -> FormDetail:
     unpublished = form_service.set_published(db, form, False)
     return _detail(db, unpublished)
@@ -104,6 +109,7 @@ def unpublish_form(db: DbSession, form: OwnedForm) -> FormDetail:
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a form and all of its responses",
 )
+
 def delete_form(db: DbSession, form: OwnedForm) -> Response:
     form_service.delete_form(db, form)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

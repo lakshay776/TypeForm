@@ -25,16 +25,6 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "ai", label: "Create with AI" },
 ];
 
-/**
- * Spreads groups across the three columns, keeping them roughly level.
- *
- * A plain CSS `columns` layout balances by rendered height, which reflows
- * unpredictably as the search filter changes the item count. This fills the
- * columns *in order* instead, moving on once a column reaches its share of the
- * total — so a group's items stay together and the categories still read
- * top-to-bottom, left-to-right in the order they are declared. Weight counts the
- * heading as one row.
- */
 function toColumns(groups: PickerGroup[]): PickerGroup[][] {
   const weight = (group: PickerGroup) => group.items.length + 1;
   const target = Math.ceil(groups.reduce((sum, group) => sum + weight(group), 0) / COLUMN_COUNT);
@@ -60,11 +50,8 @@ interface AddElementsModalProps {
   open: boolean;
   onClose: () => void;
   onPick: (type: QuestionType) => void;
-  /** Resolves with how many questions were created. */
   onImport: (titles: string[]) => Promise<number>;
-  /** Turns on the form's welcome screen and selects it. */
   onAddWelcomeScreen: () => void;
-  /** Whether this form already has a welcome screen. */
   welcomeScreenAdded: boolean;
   onPlaceholder: (feature: string) => void;
 }
@@ -82,9 +69,6 @@ export function AddElementsModal(props: AddElementsModalProps) {
             onClick={props.onClose}
             className="absolute inset-0 bg-[#1a1822]/45"
           />
-          {/* All panel state lives in here, which only exists while the dialog is
-              open — so it starts on the first tab with an empty search and an
-              empty textarea every time, without needing a reset effect. */}
           <Panel {...props} />
         </div>
       )}
@@ -140,8 +124,6 @@ function Panel({
             )}
           >
             {item.label}
-            {/* The active marker sits on the dialog's top edge rather than under
-                the label, which is how the reference draws it. */}
             {tab === item.id && (
               <span className="absolute inset-x-2 -top-5 h-[3.5px] rounded-b-full bg-plum" />
             )}
@@ -169,10 +151,6 @@ function Panel({
   );
 }
 
-/* ------------------------------------------------------------------------- */
-/* Add form elements                                                         */
-/* ------------------------------------------------------------------------- */
-
 function ElementsTab({
   onPick,
   onClose,
@@ -188,7 +166,6 @@ function ElementsTab({
   const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Focus search on mount so the picker is usable straight from the keyboard.
     const frame = requestAnimationFrame(() => searchRef.current?.focus());
     return () => cancelAnimationFrame(frame);
   }, []);
@@ -317,11 +294,6 @@ function ElementButton({ item, onSelect }: { item: PickerItem; onSelect: () => v
   );
 }
 
-/* ------------------------------------------------------------------------- */
-/* Import questions                                                          */
-/* ------------------------------------------------------------------------- */
-
-/** One question per non-blank line, trimmed. */
 function parseTitles(text: string): string[] {
   return text
     .split(/\r?\n/)
@@ -354,9 +326,6 @@ function ImportTab({
     setBusy(true);
     try {
       const created = await onImport(titles);
-      // Only dismiss on success. Closing on failure would hide the pasted text
-      // along with the dialog, leaving nothing to retry and making a failed
-      // import look like one that silently did nothing.
       if (created > 0) onClose();
     } finally {
       setBusy(false);
@@ -380,8 +349,6 @@ function ImportTab({
               value={text}
               onChange={(event) => setText(event.target.value)}
               onKeyDown={(event) => {
-                // Ctrl/Cmd+Enter submits; plain Enter has to stay a newline here,
-                // since one line per question is the whole input format.
                 if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
                   event.preventDefault();
                   void submit();
@@ -450,8 +417,6 @@ function ImportTab({
         <Button
           variant="primary"
           size="lg"
-          // The shared disabled style dims the dark fill, which still reads as a
-          // dark button. Here it should go light-on-grey, as the reference does.
           className="font-medium disabled:bg-hover disabled:text-ink-faint disabled:opacity-100"
           disabled={titles.length === 0}
           loading={busy}
@@ -464,17 +429,6 @@ function ImportTab({
   );
 }
 
-/* ------------------------------------------------------------------------- */
-/* Create with AI                                                            */
-/* ------------------------------------------------------------------------- */
-
-/**
- * Placeholder tab.
- *
- * AI form generation appears nowhere in the brief — not in the core features, the
- * bonus list, or the placeholder list — so the surface exists for navigational
- * fidelity but there is nothing behind it.
- */
 function AiTab({ onClose }: { onClose: () => void }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center rounded-t-[10px] bg-canvas px-8 py-20 text-center">

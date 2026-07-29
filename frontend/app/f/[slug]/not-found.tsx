@@ -1,9 +1,5 @@
 import Link from "next/link";
 
-/**
- * Shown for an unknown slug *and* for an unpublished draft — the API returns 404
- * for both on purpose, so this copy must not imply the form exists.
- */
 export default function FormNotFound() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-6 text-center">

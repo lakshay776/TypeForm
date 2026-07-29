@@ -6,7 +6,6 @@ import { FormActions, FormActionsMenu, StatusPill } from "@/components/dashboard
 import { FORM_THUMBNAIL, cn, formatDate, pluralize } from "@/lib/format";
 import type { FormSummary } from "@/lib/types";
 
-/** Grid-view tile, behind the List/Grid toggle. */
 export function FormCard({
   form,
   actions,

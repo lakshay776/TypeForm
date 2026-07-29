@@ -16,7 +16,6 @@ export type FormTab = "content" | "workflow" | "connect" | "share" | "results";
 interface TabDef {
   id: FormTab;
   label: string;
-  /** Route to push, or undefined for the tabs that aren't implemented. */
   path?: (formId: number) => string;
 }
 
@@ -28,35 +27,17 @@ const TABS: TabDef[] = [
   { id: "results", label: "Results", path: (id) => `/forms/${id}/results` },
 ];
 
-/**
- * Tabs that only mean something once a form is live: a draft has no link to hand
- * out and no responses to summarise, so both would open a page that can only say
- * "nothing here yet".
- *
- * The *routes* stay reachable while a form is a draft — the top bar's Share
- * button navigates to `/share?publish=1` to publish, which is the only way a form
- * goes live. Hiding the tab is not the same as blocking the page.
- */
 const PUBLISHED_ONLY = new Set<FormTab>(["share", "results"]);
 
 interface FormTopBarProps {
   form: FormDetail;
   active: FormTab;
-  /** Only the builder autosaves, so the indicator is optional. */
   saveState?: SaveState;
   onRename?: (title: string) => void;
-  /** Publishes edits made to an already-live form. Builder only. */
   onPublishEdits?: () => Promise<void>;
   onPlaceholder: (feature: string) => void;
 }
 
-/**
- * Chrome shared by the builder, share and results routes.
- *
- * The tabs are real navigation rather than in-page state, so each view is its own
- * URL — which matters because "send me the results link" is a thing people do, and
- * it means the back button behaves.
- */
 export function FormTopBar({
   form,
   active,
@@ -82,20 +63,11 @@ export function FormTopBar({
     else onPlaceholder(tab.label);
   };
 
-  // `|| tab.id === active` keeps the current tab visible even when gated: arriving
-  // via the Share button publishes on load, and until that request lands the page
-  // would otherwise render with no tab marked as current.
   const published = form.status === "published";
   const visibleTabs = TABS.filter(
     (tab) => published || !PUBLISHED_ONLY.has(tab.id) || tab.id === active,
   );
 
-  // Two rows below lg, one from lg up.
-  //
-  // The tabs are absolutely centred so they stay put as the form title grows, but
-  // an absolutely positioned element cannot also be narrow — at 375px it ran
-  // straight off the right edge. Below lg it drops to its own scrollable row,
-  // which is the only way five tabs and the actions coexist.
   return (
     <header className="relative flex shrink-0 flex-col border-b border-line bg-canvas lg:h-[56px] lg:flex-row lg:items-center lg:gap-4">
       <div className="flex h-[56px] min-w-0 flex-1 items-center justify-between gap-2 px-3 sm:px-5">
@@ -145,25 +117,14 @@ export function FormTopBar({
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
-        {/* Edits to a live form are published from here, so the creator never has
-            to leave the builder to make them count. */}
         {form.has_unpublished_edits && onPublishEdits && (
           <PublishEditsButton onPublish={onPublishEdits} />
         )}
 
-        {/*
-         * Once a form is live there is nothing left to "share" — the useful action
-         * is grabbing the link — so the button becomes a copy control. Before that
-         * it stays the Share action, except on the Share tab itself where the page
-         * already carries the Publish button.
-         */}
         {form.public_url ? (
           <CopyLinkButton url={form.public_url} />
         ) : (
           active !== "share" && (
-            // `?publish=1` marks this as the deliberate "share it" action, so the
-            // Share page publishes a ready draft on arrival. Clicking the Share
-            // *tab* omits it, because navigating between tabs should never mutate.
             <Link
               href={`/forms/${form.id}/share?publish=1`}
               className="flex h-9 items-center gap-2 rounded-[var(--radius-control)] border border-line bg-canvas px-3.5 text-sm font-medium text-ink transition-colors hover:bg-hover"
@@ -221,13 +182,6 @@ export function FormTopBar({
   );
 }
 
-/**
- * Pushes edits made to a live form.
- *
- * Shown only while `has_unpublished_edits` is set, so it appears when there is
- * something to publish and disappears once there isn't — the button's presence is
- * the "you have unsaved changes" signal, which is why there is no separate badge.
- */
 function PublishEditsButton({ onPublish }: { onPublish: () => Promise<void> }) {
   const [busy, setBusy] = useState(false);
 
@@ -240,8 +194,6 @@ function PublishEditsButton({ onPublish }: { onPublish: () => Promise<void> }) {
         try {
           await onPublish();
         } finally {
-          // The button unmounts on success, so this only matters on failure —
-          // where leaving it spinning forever would strand the creator.
           setBusy(false);
         }
       }}
@@ -255,19 +207,10 @@ function PublishEditsButton({ onPublish }: { onPublish: () => Promise<void> }) {
 
 const COPIED_FEEDBACK_MS = 1800;
 
-/**
- * Copies the public link, flipping to a tick to confirm.
- *
- * The tick is the confirmation rather than a toast: the button is what was
- * clicked, so that is where the answer belongs. `aria-live` carries the same
- * result to a screen reader, which can't see the glyph change.
- */
 function CopyLinkButton({ url }: { url: string }) {
   const [copied, setCopied] = useState(false);
   const timer = useRef<number | null>(null);
 
-  // Clears a pending revert if the bar unmounts mid-feedback, so no state is set
-  // against a component that has gone.
   useEffect(() => {
     return () => {
       if (timer.current !== null) window.clearTimeout(timer.current);
@@ -281,8 +224,6 @@ function CopyLinkButton({ url }: { url: string }) {
       if (timer.current !== null) window.clearTimeout(timer.current);
       timer.current = window.setTimeout(() => setCopied(false), COPIED_FEEDBACK_MS);
     } catch {
-      // Clipboard access needs a secure context. Falling back to selecting the
-      // text would need an input; the Share tab has one, so point there instead.
       window.prompt("Copy this link", url);
     }
   };
@@ -296,8 +237,6 @@ function CopyLinkButton({ url }: { url: string }) {
       className={cn(
         "flex h-9 w-9 items-center justify-center rounded-[var(--radius-control)] border",
         "transition-colors duration-200",
-        // The confirmed state darkens rather than turning green: the reference
-        // keeps it neutral, and the glyph change already carries the meaning.
         copied
           ? "border-ink-faint bg-canvas text-ink"
           : "border-line bg-canvas text-ink-soft hover:bg-hover hover:text-ink",
@@ -342,7 +281,6 @@ function LinkGlyph() {
   );
 }
 
-/** Autosave feedback — the builder never shows an explicit Save button. */
 function SaveIndicator({ state }: { state: SaveState }) {
   if (state === "idle") return null;
 
